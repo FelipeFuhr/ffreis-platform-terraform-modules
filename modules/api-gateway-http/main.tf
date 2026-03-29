@@ -74,6 +74,7 @@ resource "aws_apigatewayv2_stage" "this" {
     for_each = var.access_log_arn != null ? [1] : []
     content {
       destination_arn = var.access_log_arn
+      format          = var.access_log_format
     }
   }
 
@@ -95,8 +96,6 @@ locals {
   }
 }
 
-data "aws_region" "current" {}
-data "aws_caller_identity" "current" {}
 
 resource "aws_lambda_permission" "apigw" {
   for_each = local.lambda_routes

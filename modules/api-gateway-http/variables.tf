@@ -76,6 +76,23 @@ variable "access_log_arn" {
   default     = null
 }
 
+variable "access_log_format" {
+  description = "Access log format for the stage. Only used when access_log_arn is set."
+  type        = string
+  default = jsonencode({
+    requestId               = "$context.requestId"
+    requestTime             = "$context.requestTime"
+    httpMethod              = "$context.httpMethod"
+    routeKey                = "$context.routeKey"
+    path                    = "$context.path"
+    status                  = "$context.status"
+    responseLength          = "$context.responseLength"
+    ip                      = "$context.identity.sourceIp"
+    userAgent               = "$context.identity.userAgent"
+    integrationErrorMessage = "$context.integrationErrorMessage"
+  })
+}
+
 variable "throttle_burst_limit" {
   description = "Stage throttle burst limit. -1 = no limit."
   type        = number

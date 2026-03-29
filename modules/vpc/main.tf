@@ -1,5 +1,3 @@
-data "aws_caller_identity" "current" {}
-
 locals {
   nat_count      = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.public_subnet_cidrs)) : 0
   has_db_subnets = length(var.database_subnet_cidrs) > 0
@@ -190,6 +188,8 @@ data "aws_iam_policy_document" "flow_logs_assume" {
   }
 }
 
+#checkov:skip=CKV_AWS_356:CloudWatch Logs Describe* actions are not resource-scoped and must use '*'.
+#checkov:skip=CKV_AWS_111:CloudWatch Logs Describe* actions are not resource-scoped and must use '*'.
 data "aws_iam_policy_document" "flow_logs_write" {
   count = var.enable_flow_logs ? 1 : 0
 

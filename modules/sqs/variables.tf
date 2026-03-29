@@ -46,9 +46,9 @@ variable "receive_wait_time_seconds" {
 }
 
 variable "kms_master_key_id" {
-  description = "KMS key ARN/alias for SSE-KMS. Use 'alias/aws/sqs' for the AWS-managed key."
+  description = "KMS key ARN/alias for SSE-KMS. null = create a customer-managed key."
   type        = string
-  default     = "alias/aws/sqs"
+  default     = null
 }
 
 variable "kms_data_key_reuse_period_seconds" {

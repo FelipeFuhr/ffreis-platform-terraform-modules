@@ -1,6 +1,5 @@
 data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
-data "aws_region" "current" {}
 
 locals {
   s3_prefix = var.s3_key_prefix != "" ? var.s3_key_prefix : var.name
@@ -8,6 +7,8 @@ locals {
   iam_effect_allow           = "Allow"
   iam_action_sts_assume_role = "sts:AssumeRole"
   iam_principal_type_service = "Service"
+
+  cloudtrail_sns_kms_key_arn = var.sns_kms_key_arn != null ? var.sns_kms_key_arn : aws_kms_key.cloudtrail_sns[0].arn
 }
 
 # ---------------------------------------------------------------------------
@@ -59,8 +60,62 @@ resource "aws_iam_role_policy" "cloudtrail_logs" {
 # SNS destination (required by Checkov CKV_AWS_252)
 # ---------------------------------------------------------------------------
 resource "aws_sns_topic" "cloudtrail" {
-  name = "${var.name}-cloudtrail"
-  tags = var.tags
+  name              = "${var.name}-cloudtrail"
+  kms_master_key_id = local.cloudtrail_sns_kms_key_arn
+  tags              = var.tags
+}
+
+data "aws_iam_policy_document" "cloudtrail_sns_kms_policy" {
+  statement {
+    sid       = "EnableRootPermissions"
+    effect    = local.iam_effect_allow
+    actions   = ["kms:*"]
+    resources = ["*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+  }
+
+  statement {
+    sid    = "AllowSNSToUseKey"
+    effect = local.iam_effect_allow
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:DescribeKey",
+    ]
+    resources = ["*"]
+
+    principals {
+      type        = local.iam_principal_type_service
+      identifiers = ["sns.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
+}
+
+resource "aws_kms_key" "cloudtrail_sns" {
+  count                   = var.sns_kms_key_arn == null ? 1 : 0
+  description             = "KMS key for CloudTrail SNS topic encryption (${var.name})"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.cloudtrail_sns_kms_policy.json
+  tags                    = var.tags
+}
+
+resource "aws_kms_alias" "cloudtrail_sns" {
+  count         = var.sns_kms_key_arn == null ? 1 : 0
+  name          = "alias/${var.name}-cloudtrail-sns"
+  target_key_id = aws_kms_key.cloudtrail_sns[0].key_id
 }
 
 data "aws_iam_policy_document" "cloudtrail_sns_policy" {

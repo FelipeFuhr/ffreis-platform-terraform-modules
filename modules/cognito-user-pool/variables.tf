@@ -32,12 +32,6 @@ variable "software_token_mfa_enabled" {
   default     = true
 }
 
-variable "sms_mfa_enabled" {
-  description = "Allow SMS as an MFA method (requires SNS IAM role)."
-  type        = bool
-  default     = false
-}
-
 variable "password_policy" {
   description = "Password policy settings."
   type = object({

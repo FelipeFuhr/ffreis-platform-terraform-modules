@@ -1,0 +1,30 @@
+name: Code Scanning (CodeQL)
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  schedule:
+    - cron: "0 3 * * 0" # Sundays 03:00 UTC
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql:
+    # GitHub Code Scanning can be enabled/disabled per-repo.
+    # Enable explicitly by setting repository variable:
+    #   CODEQL_ENABLED=true
+    if: vars.CODEQL_ENABLED == 'true'
+    uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-codeql.yml@c3e3e0a44d4b79697f1babaa9bf287d1b264da52
+    with:
+      # This repository is primarily Terraform modules; CodeQL supports scanning
+      # GitHub Actions workflows as `language: actions`.
+      languages: "actions"
+      source-root: "."

@@ -15,7 +15,7 @@ output "zone_id" {
 
 output "https_listener_arn" {
   description = "HTTPS listener ARN (add extra listener rules here)."
-  value       = var.create_https_listener ? aws_lb_listener.https[0].arn : ""
+  value       = aws_lb_listener.https[0].arn
 }
 
 output "http_listener_arn" {

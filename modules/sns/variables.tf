@@ -22,9 +22,9 @@ variable "display_name" {
 }
 
 variable "kms_master_key_id" {
-  description = "KMS key ARN/alias for SSE. Use 'alias/aws/sns' for the AWS-managed key."
+  description = "KMS key ARN/alias for SSE. null = create a customer-managed key."
   type        = string
-  default     = "alias/aws/sns"
+  default     = null
 }
 
 variable "policy" {

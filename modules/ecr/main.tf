@@ -32,6 +32,10 @@ locals {
   )
 }
 
+data "aws_caller_identity" "current" {}
+data "aws_partition" "current" {}
+data "aws_region" "current" {}
+
 resource "aws_ecr_repository" "this" {
   name                 = var.name
   image_tag_mutability = var.image_tag_mutability
@@ -43,11 +47,49 @@ resource "aws_ecr_repository" "this" {
 
   # Checkov CKV_AWS_136: enforce KMS encryption.
   encryption_configuration {
-    encryption_type = "KMS"
+    encryption_type = var.encryption_type
     kms_key         = var.kms_key_arn != null ? var.kms_key_arn : aws_kms_key.ecr[0].arn
   }
 
   tags = var.tags
+}
+
+data "aws_iam_policy_document" "ecr_kms_policy" {
+  statement {
+    sid       = "EnableRootPermissions"
+    effect    = "Allow"
+    actions   = ["kms:*"]
+    resources = ["*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+  }
+
+  statement {
+    sid    = "AllowECRToUseKey"
+    effect = "Allow"
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:DescribeKey",
+    ]
+    resources = ["*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ecr.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
 }
 
 resource "aws_kms_key" "ecr" {
@@ -55,6 +97,7 @@ resource "aws_kms_key" "ecr" {
   description             = "KMS key for ECR repository encryption (${var.name})"
   deletion_window_in_days = 7
   enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.ecr_kms_policy.json
   tags                    = var.tags
 }
 

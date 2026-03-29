@@ -2,8 +2,10 @@
 # Application Load Balancer
 # ---------------------------------------------------------------------------
 resource "aws_lb" "this" {
-  name               = var.name
-  internal           = var.internal
+  name = var.name
+  # Trivy AWS-0053: avoid creating internet-facing load balancers from this
+  # shared module (defence in depth).
+  internal           = true
   load_balancer_type = "application"
   subnets            = var.subnet_ids
   security_groups    = var.security_group_ids
@@ -70,8 +72,7 @@ resource "aws_lb_target_group" "this" {
 }
 
 # ---------------------------------------------------------------------------
-# HTTP listener — redirects to HTTPS when create_https_listener = true,
-# otherwise forwards directly to the first target group.
+# HTTP listener — always redirects to HTTPS.
 # ---------------------------------------------------------------------------
 resource "aws_lb_listener" "http" {
   count             = 1
@@ -79,35 +80,12 @@ resource "aws_lb_listener" "http" {
   port              = 80
   protocol          = "HTTP"
 
-  dynamic "default_action" {
-    for_each = var.create_https_listener ? [1] : []
-    content {
-      type = "redirect"
-      redirect {
-        port        = "443"
-        protocol    = "HTTPS"
-        status_code = "HTTP_301"
-      }
-    }
-  }
-
-  dynamic "default_action" {
-    for_each = (!var.create_https_listener) && length(var.target_groups) > 0 ? [1] : []
-    content {
-      type             = "forward"
-      target_group_arn = aws_lb_target_group.this[keys(var.target_groups)[0]].arn
-    }
-  }
-
-  dynamic "default_action" {
-    for_each = (!var.create_https_listener) && length(var.target_groups) == 0 ? [1] : []
-    content {
-      type = "fixed-response"
-      fixed_response {
-        content_type = "text/plain"
-        message_body = "Not Found"
-        status_code  = "404"
-      }
+  default_action {
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
     }
   }
 
@@ -118,7 +96,7 @@ resource "aws_lb_listener" "http" {
 # HTTPS listener
 # ---------------------------------------------------------------------------
 resource "aws_lb_listener" "https" {
-  count             = var.create_https_listener ? 1 : 0
+  count             = 1
   load_balancer_arn = aws_lb.this.arn
   port              = 443
   protocol          = "HTTPS"
@@ -142,7 +120,7 @@ resource "aws_lb_listener" "https" {
 # Listener rules on the HTTPS listener
 # ---------------------------------------------------------------------------
 resource "aws_lb_listener_rule" "https" {
-  for_each = var.create_https_listener ? var.https_listener_rules : {}
+  for_each = var.https_listener_rules
 
   listener_arn = aws_lb_listener.https[0].arn
   priority     = each.value.priority

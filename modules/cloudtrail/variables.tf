@@ -56,6 +56,12 @@ variable "cloudwatch_logs_kms_key_arn" {
   default     = null
 }
 
+variable "sns_kms_key_arn" {
+  description = "KMS key ARN for encrypting the CloudTrail SNS topic. null = create a key."
+  type        = string
+  default     = null
+}
+
 variable "event_selectors" {
   description = <<-EOT
     List of event selectors for data events (e.g., S3 object-level events).

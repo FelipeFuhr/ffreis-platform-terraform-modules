@@ -1,6 +1,6 @@
 resource "aws_guardduty_detector" "this" {
-  # Checkov CKV2_AWS_3 expects GuardDuty to be enabled.
-  enable                       = true
+  #checkov:skip=CKV2_AWS_3:Org/region scoping is enforced by org-level GuardDuty configuration; this module manages a single detector.
+  enable                       = var.enable
   finding_publishing_frequency = var.finding_publishing_frequency
 
   datasources {

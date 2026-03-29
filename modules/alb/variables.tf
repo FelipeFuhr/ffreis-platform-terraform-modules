@@ -3,19 +3,13 @@ variable "name" {
   type        = string
 }
 
-variable "internal" {
-  description = "Create an internal (private) ALB. false = internet-facing."
-  type        = bool
-  default     = false
-}
-
 variable "vpc_id" {
   description = "VPC ID."
   type        = string
 }
 
 variable "subnet_ids" {
-  description = "Subnet IDs for the ALB. Use public subnets for internet-facing, private for internal."
+  description = "Subnet IDs for the ALB."
   type        = list(string)
 }
 
@@ -25,27 +19,20 @@ variable "security_group_ids" {
 }
 
 variable "certificate_arn" {
-  description = "ACM certificate ARN for HTTPS listener. Required when create_https_listener = true."
+  description = "ACM certificate ARN for HTTPS listener."
   type        = string
   default     = null
+
+  validation {
+    condition     = var.certificate_arn != null
+    error_message = "certificate_arn must be set (HTTPS is required for this module)."
+  }
 }
 
 variable "ssl_policy" {
   description = "HTTPS listener SSL policy."
   type        = string
   default     = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-}
-
-variable "create_https_listener" {
-  description = "Create an HTTPS (443) listener. Requires certificate_arn."
-  type        = bool
-  default     = true
-}
-
-variable "http_redirect_to_https" {
-  description = "Create an HTTP (80) listener that redirects to HTTPS. Only effective when create_https_listener = true."
-  type        = bool
-  default     = true
 }
 
 variable "idle_timeout" {
