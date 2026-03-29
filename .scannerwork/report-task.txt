@@ -1,7 +1,0 @@
-organization=felipefuhr
-projectKey=FelipeFuhr_ffreis-platform-terraform-modules
-serverUrl=https://sonarcloud.io
-serverVersion=8.0.0.84103
-dashboardUrl=https://sonarcloud.io/dashboard?id=FelipeFuhr_ffreis-platform-terraform-modules
-ceTaskId=AZ077qJDXbwlMpn52BMT
-ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZ077qJDXbwlMpn52BMT
