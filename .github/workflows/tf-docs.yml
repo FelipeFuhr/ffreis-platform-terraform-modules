@@ -1,0 +1,22 @@
+name: Terraform Docs (drift check)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "modules/**"
+      - ".github/workflows/tf-docs.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-docs.yml@main
+    with:
+      working-directory: "modules"
