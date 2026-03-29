@@ -8,6 +8,9 @@ data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 data "aws_iam_policy_document" "sqs_kms_policy" {
+  #checkov:skip=CKV_AWS_356:KMS key policies require '*' as resource; the policy is attached to the key and scoped to it by design.
+  #checkov:skip=CKV_AWS_111:KMS key policies require '*' as resource; the policy is attached to the key and scoped to it by design.
+  #checkov:skip=CKV_AWS_109:KMS key policies require '*' as resource; the policy is attached to the key and scoped to it by design.
   statement {
     sid       = "EnableRootPermissions"
     effect    = "Allow"

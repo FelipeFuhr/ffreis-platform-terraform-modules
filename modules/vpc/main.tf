@@ -188,9 +188,9 @@ data "aws_iam_policy_document" "flow_logs_assume" {
   }
 }
 
-#checkov:skip=CKV_AWS_356:CloudWatch Logs Describe* actions are not resource-scoped and must use '*'.
-#checkov:skip=CKV_AWS_111:CloudWatch Logs Describe* actions are not resource-scoped and must use '*'.
 data "aws_iam_policy_document" "flow_logs_write" {
+  #checkov:skip=CKV_AWS_356:CloudWatch Logs Describe* actions are not resource-scoped and must use '*'.
+  #checkov:skip=CKV_AWS_111:CloudWatch Logs Describe* actions are not resource-scoped and must use '*'.
   count = var.enable_flow_logs ? 1 : 0
 
   statement {
