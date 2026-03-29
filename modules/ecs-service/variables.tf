@@ -84,9 +84,9 @@ variable "volumes" {
   type = list(object({
     name = string
     efs_volume_configuration = optional(object({
-      file_system_id          = string
-      root_directory          = optional(string, "/")
-      transit_encryption      = optional(string, "ENABLED")
+      file_system_id     = string
+      root_directory     = optional(string, "/")
+      transit_encryption = optional(string, "ENABLED")
       authorization_config = optional(object({
         access_point_id = optional(string, null)
         iam             = optional(string, "ENABLED")

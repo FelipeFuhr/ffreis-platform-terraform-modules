@@ -11,10 +11,9 @@ locals {
 }
 
 # ---------------------------------------------------------------------------
-# CloudWatch Logs destination (optional)
+# CloudWatch Logs destination
 # ---------------------------------------------------------------------------
 resource "aws_cloudwatch_log_group" "trail" {
-  count             = var.enable_cloudwatch_logs ? 1 : 0
   name              = "/cloudtrail/${var.name}"
   retention_in_days = var.cloudwatch_logs_retention_days
   kms_key_id        = var.cloudwatch_logs_kms_key_arn
@@ -23,8 +22,6 @@ resource "aws_cloudwatch_log_group" "trail" {
 }
 
 data "aws_iam_policy_document" "cloudtrail_assume" {
-  count = var.enable_cloudwatch_logs ? 1 : 0
-
   statement {
     effect  = local.iam_effect_allow
     actions = [local.iam_action_sts_assume_role]
@@ -36,30 +33,54 @@ data "aws_iam_policy_document" "cloudtrail_assume" {
 }
 
 data "aws_iam_policy_document" "cloudtrail_logs_write" {
-  count = var.enable_cloudwatch_logs ? 1 : 0
-
   statement {
     effect = local.iam_effect_allow
     actions = [
       "logs:CreateLogStream",
       "logs:PutLogEvents",
     ]
-    resources = ["${aws_cloudwatch_log_group.trail[0].arn}:*"]
+    resources = ["${aws_cloudwatch_log_group.trail.arn}:*"]
   }
 }
 
 resource "aws_iam_role" "cloudtrail" {
-  count              = var.enable_cloudwatch_logs ? 1 : 0
   name               = "${var.name}-cloudtrail-cw"
-  assume_role_policy = data.aws_iam_policy_document.cloudtrail_assume[0].json
+  assume_role_policy = data.aws_iam_policy_document.cloudtrail_assume.json
   tags               = var.tags
 }
 
 resource "aws_iam_role_policy" "cloudtrail_logs" {
-  count  = var.enable_cloudwatch_logs ? 1 : 0
   name   = "write-cloudtrail-logs"
-  role   = aws_iam_role.cloudtrail[0].id
-  policy = data.aws_iam_policy_document.cloudtrail_logs_write[0].json
+  role   = aws_iam_role.cloudtrail.id
+  policy = data.aws_iam_policy_document.cloudtrail_logs_write.json
+}
+
+# ---------------------------------------------------------------------------
+# SNS destination (required by Checkov CKV_AWS_252)
+# ---------------------------------------------------------------------------
+resource "aws_sns_topic" "cloudtrail" {
+  name = "${var.name}-cloudtrail"
+  tags = var.tags
+}
+
+data "aws_iam_policy_document" "cloudtrail_sns_policy" {
+  statement {
+    sid     = "AllowCloudTrailPublish"
+    effect  = local.iam_effect_allow
+    actions = ["sns:Publish"]
+
+    principals {
+      type        = local.iam_principal_type_service
+      identifiers = ["cloudtrail.amazonaws.com"]
+    }
+
+    resources = [aws_sns_topic.cloudtrail.arn]
+  }
+}
+
+resource "aws_sns_topic_policy" "cloudtrail" {
+  arn    = aws_sns_topic.cloudtrail.arn
+  policy = data.aws_iam_policy_document.cloudtrail_sns_policy.json
 }
 
 # ---------------------------------------------------------------------------
@@ -74,8 +95,9 @@ resource "aws_cloudtrail" "this" {
   enable_log_file_validation    = var.enable_log_file_validation
   kms_key_id                    = var.kms_key_arn
 
-  cloud_watch_logs_group_arn = var.enable_cloudwatch_logs ? "${aws_cloudwatch_log_group.trail[0].arn}:*" : null
-  cloud_watch_logs_role_arn  = var.enable_cloudwatch_logs ? aws_iam_role.cloudtrail[0].arn : null
+  cloud_watch_logs_group_arn = "${aws_cloudwatch_log_group.trail.arn}:*"
+  cloud_watch_logs_role_arn  = aws_iam_role.cloudtrail.arn
+  sns_topic_name             = aws_sns_topic.cloudtrail.name
 
   dynamic "event_selector" {
     for_each = var.event_selectors
@@ -94,4 +116,6 @@ resource "aws_cloudtrail" "this" {
   }
 
   tags = var.tags
+
+  depends_on = [aws_sns_topic_policy.cloudtrail]
 }

@@ -62,6 +62,7 @@ resource "aws_iam_role_policy" "task_inline" {
 # Task definition
 # ---------------------------------------------------------------------------
 resource "aws_ecs_task_definition" "this" {
+  #checkov:skip=CKV_AWS_249:Execution and task roles may be provided by the caller; validate at the stack level to ensure they differ.
   family                   = var.name
   cpu                      = var.cpu
   memory                   = var.memory
@@ -85,15 +86,16 @@ resource "aws_ecs_task_definition" "this" {
       dynamic "efs_volume_configuration" {
         for_each = volume.value.efs_volume_configuration != null ? [volume.value.efs_volume_configuration] : []
         content {
-          file_system_id     = efs_volume_configuration.value.file_system_id
-          root_directory     = efs_volume_configuration.value.root_directory
-          transit_encryption = efs_volume_configuration.value.transit_encryption
+          file_system_id = efs_volume_configuration.value.file_system_id
+          root_directory = efs_volume_configuration.value.root_directory
+          # Checkov CKV_AWS_97: always require encryption in transit for EFS volumes.
+          transit_encryption = "ENABLED"
 
           dynamic "authorization_config" {
             for_each = efs_volume_configuration.value.authorization_config != null ? [efs_volume_configuration.value.authorization_config] : []
             content {
               access_point_id = authorization_config.value.access_point_id
-              iam             = authorization_config.value.iam
+              iam             = "ENABLED"
             }
           }
         }

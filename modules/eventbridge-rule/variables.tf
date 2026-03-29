@@ -49,9 +49,9 @@ variable "targets" {
     retry_policy: Optional retry configuration.
   EOT
   type = map(object({
-    arn  = string
-    role_arn = optional(string, null)
-    input    = optional(string, null)
+    arn        = string
+    role_arn   = optional(string, null)
+    input      = optional(string, null)
     input_path = optional(string, null)
     input_transformer = optional(object({
       input_paths    = map(string)

@@ -6,7 +6,7 @@ variable "name" {
 variable "retention_in_days" {
   description = "Number of days to retain log events. 0 = never expire."
   type        = number
-  default     = 90
+  default     = 365
 
   validation {
     condition = contains(

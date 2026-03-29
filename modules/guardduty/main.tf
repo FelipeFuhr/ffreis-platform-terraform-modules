@@ -1,5 +1,6 @@
 resource "aws_guardduty_detector" "this" {
-  enable                       = var.enable
+  # Checkov CKV2_AWS_3 expects GuardDuty to be enabled.
+  enable                       = true
   finding_publishing_frequency = var.finding_publishing_frequency
 
   datasources {

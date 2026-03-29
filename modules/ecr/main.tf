@@ -16,10 +16,10 @@ locals {
       rulePriority = 2
       description  = "Keep only the ${var.keep_image_count} most recent tagged images"
       selection = {
-        tagStatus   = "tagged"
+        tagStatus     = "tagged"
         tagPrefixList = ["v", ""]
-        countType   = "imageCountMoreThan"
-        countNumber = var.keep_image_count
+        countType     = "imageCountMoreThan"
+        countNumber   = var.keep_image_count
       }
       action = { type = "expire" }
     }) : null,
@@ -28,7 +28,7 @@ locals {
   lifecycle_policy = var.lifecycle_policy != null ? var.lifecycle_policy : (
     length(local.default_lifecycle_rules) > 0 ? jsonencode({ rules = [
       for rule in local.default_lifecycle_rules : jsondecode(rule)
-    ]}) : null
+    ] }) : null
   )
 }
 
@@ -41,12 +41,27 @@ resource "aws_ecr_repository" "this" {
     scan_on_push = var.scan_on_push
   }
 
+  # Checkov CKV_AWS_136: enforce KMS encryption.
   encryption_configuration {
-    encryption_type = var.encryption_type
-    kms_key         = var.encryption_type == "KMS" ? var.kms_key_arn : null
+    encryption_type = "KMS"
+    kms_key         = var.kms_key_arn != null ? var.kms_key_arn : aws_kms_key.ecr[0].arn
   }
 
   tags = var.tags
+}
+
+resource "aws_kms_key" "ecr" {
+  count                   = var.kms_key_arn == null ? 1 : 0
+  description             = "KMS key for ECR repository encryption (${var.name})"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+  tags                    = var.tags
+}
+
+resource "aws_kms_alias" "ecr" {
+  count         = var.kms_key_arn == null ? 1 : 0
+  name          = "alias/${var.name}-ecr"
+  target_key_id = aws_kms_key.ecr[0].key_id
 }
 
 resource "aws_ecr_lifecycle_policy" "this" {

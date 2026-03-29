@@ -42,6 +42,7 @@ resource "aws_iam_role_policy_attachment" "monitoring" {
 # RDS instance
 # ---------------------------------------------------------------------------
 resource "aws_db_instance" "this" {
+  #checkov:skip=CKV2_AWS_30:Query logging is engine-specific and typically enforced via parameter groups at the stack level.
   identifier = var.identifier
 
   engine         = var.engine
@@ -81,6 +82,8 @@ resource "aws_db_instance" "this" {
   option_group_name    = var.option_group_name
 
   enabled_cloudwatch_logs_exports = var.enabled_cloudwatch_logs_exports
+
+  iam_database_authentication_enabled = var.iam_database_authentication_enabled
 
   monitoring_interval = var.monitoring_interval
   monitoring_role_arn = local.create_monitoring_role ? aws_iam_role.monitoring[0].arn : null

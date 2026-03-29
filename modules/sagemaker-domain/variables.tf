@@ -44,7 +44,7 @@ variable "kms_key_id" {
 variable "default_user_settings" {
   description = "Default user settings for new Studio users."
   type = object({
-    execution_role = string # IAM role ARN used by Studio notebooks.
+    execution_role  = string # IAM role ARN used by Studio notebooks.
     security_groups = optional(list(string), [])
     sharing_settings = optional(object({
       notebook_output_option = optional(string, "Disabled")
@@ -57,7 +57,7 @@ variable "default_user_settings" {
 variable "user_profiles" {
   description = "Map of user profile name → configuration. Each entry creates an aws_sagemaker_user_profile."
   type = map(object({
-    execution_role  = optional(string, null)  # Override the domain default if needed.
+    execution_role  = optional(string, null) # Override the domain default if needed.
     security_groups = optional(list(string), [])
     tags            = optional(map(string), {})
   }))

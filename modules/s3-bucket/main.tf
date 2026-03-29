@@ -2,6 +2,8 @@
 # Bucket
 # ---------------------------------------------------------------------------
 resource "aws_s3_bucket" "this" {
+  #checkov:skip=CKV_AWS_144:Cross-region replication requires a destination bucket/provider configuration; enforce at the stack level.
+  #checkov:skip=CKV2_AWS_62:Event notifications depend on integration targets (SQS/SNS/Lambda) and are configured by the caller.
   bucket              = var.bucket
   force_destroy       = var.force_destroy
   object_lock_enabled = var.object_lock_enabled
@@ -124,8 +126,19 @@ resource "aws_s3_bucket_policy" "tls_enforce" {
 # Lifecycle rules (optional)
 # ---------------------------------------------------------------------------
 resource "aws_s3_bucket_lifecycle_configuration" "this" {
-  count  = length(var.lifecycle_rules) > 0 ? 1 : 0
   bucket = aws_s3_bucket.this.id
+
+  dynamic "rule" {
+    for_each = var.abort_incomplete_multipart_upload_days > 0 ? [1] : []
+    content {
+      id     = "abort-incomplete-multipart-uploads"
+      status = "Enabled"
+
+      abort_incomplete_multipart_upload {
+        days_after_initiation = var.abort_incomplete_multipart_upload_days
+      }
+    }
+  }
 
   dynamic "rule" {
     for_each = var.lifecycle_rules

@@ -40,10 +40,10 @@ variable "alert_thresholds" {
     notification_type: 'ACTUAL' (real spend) or 'FORECASTED' (projected spend).
   EOT
   type = list(object({
-    threshold_percent    = number
-    comparison_operator  = optional(string, "GREATER_THAN")
-    threshold_type       = optional(string, "PERCENTAGE")
-    notification_type    = optional(string, "ACTUAL")
+    threshold_percent   = number
+    comparison_operator = optional(string, "GREATER_THAN")
+    threshold_type      = optional(string, "PERCENTAGE")
+    notification_type   = optional(string, "ACTUAL")
   }))
   default = [
     { threshold_percent = 50, notification_type = "ACTUAL" },

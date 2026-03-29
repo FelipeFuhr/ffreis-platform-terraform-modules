@@ -134,7 +134,7 @@ variable "execution_role_arn" {
 variable "log_retention_days" {
   description = "CloudWatch log retention in days for /aws/lambda/<function_name>."
   type        = number
-  default     = 30
+  default     = 365
 }
 
 variable "log_kms_key_arn" {

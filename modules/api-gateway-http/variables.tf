@@ -31,9 +31,9 @@ variable "cors_configuration" {
 variable "jwt_authorizer" {
   description = "JWT authorizer (e.g. Cognito). null = no authorizer."
   type = object({
-    name          = string
-    issuer        = string          # e.g. Cognito user pool endpoint
-    audience      = list(string)    # e.g. Cognito app client IDs
+    name             = string
+    issuer           = string       # e.g. Cognito user pool endpoint
+    audience         = list(string) # e.g. Cognito app client IDs
     identity_sources = optional(list(string), ["$request.header.Authorization"])
   })
   default = null

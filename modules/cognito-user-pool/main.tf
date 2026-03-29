@@ -26,10 +26,10 @@ resource "aws_cognito_user_pool" "this" {
   dynamic "schema" {
     for_each = var.schema_attributes
     content {
-      name                     = schema.value.name
-      attribute_data_type      = schema.value.attribute_data_type
-      required                 = schema.value.required
-      mutable                  = schema.value.mutable
+      name                = schema.value.name
+      attribute_data_type = schema.value.attribute_data_type
+      required            = schema.value.required
+      mutable             = schema.value.mutable
 
       dynamic "string_attribute_constraints" {
         for_each = schema.value.string_attribute_constraints != null ? [schema.value.string_attribute_constraints] : []
@@ -44,9 +44,9 @@ resource "aws_cognito_user_pool" "this" {
   dynamic "email_configuration" {
     for_each = var.email_from_address != null ? [1] : []
     content {
-      email_sending_account  = "DEVELOPER"
-      from_email_address     = var.email_from_address
-      source_arn             = var.email_source_arn
+      email_sending_account = "DEVELOPER"
+      from_email_address    = var.email_from_address
+      source_arn            = var.email_source_arn
     }
   }
 

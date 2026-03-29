@@ -82,10 +82,10 @@ variable "kms_key_id" {
 variable "schema_attributes" {
   description = "Custom user pool schema attributes."
   type = list(object({
-    name                     = string
-    attribute_data_type      = string # String | Number | DateTime | Boolean
-    required                 = optional(bool, false)
-    mutable                  = optional(bool, true)
+    name                = string
+    attribute_data_type = string # String | Number | DateTime | Boolean
+    required            = optional(bool, false)
+    mutable             = optional(bool, true)
     string_attribute_constraints = optional(object({
       min_length = optional(string, "0")
       max_length = optional(string, "2048")
@@ -104,9 +104,9 @@ variable "app_clients" {
     callback_urls                        = optional(list(string), [])
     logout_urls                          = optional(list(string), [])
     supported_identity_providers         = optional(list(string), ["COGNITO"])
-    access_token_validity                = optional(number, 60)   # minutes
-    id_token_validity                    = optional(number, 60)   # minutes
-    refresh_token_validity               = optional(number, 30)   # days
+    access_token_validity                = optional(number, 60) # minutes
+    id_token_validity                    = optional(number, 60) # minutes
+    refresh_token_validity               = optional(number, 30) # days
     enable_token_revocation              = optional(bool, true)
     prevent_user_existence_errors        = optional(string, "ENABLED")
     explicit_auth_flows = optional(list(string), [

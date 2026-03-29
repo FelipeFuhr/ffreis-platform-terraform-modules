@@ -33,21 +33,31 @@ jobs:
       contents: read
       actions: read
       security-events: write
-    uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-gitleaks.yml@main
-    with:
-      working-directory: "."
-      scan-history: true
-      upload-sarif: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks scan
+        id: gitleaks
+        uses: gacts/gitleaks@9d471d3bda7ee95b6fa416fdfe7e87cf393554d5
+        with:
+          version: 8.24.3
+          config-path: .gitleaks.toml
+          path: .
+          github-token: ${{ github.token }}
 
   fmt:
-    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-fmt.yml@main
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-fmt.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
     with:
       working-directory: "."
 
   # ── 3. Validate (all modules) ───────────────────────────────────────────────
   validate:
     needs: [fmt]
-    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-validate.yml@main
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-validate.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
     with:
       validate-all-modules: true
       modules-dir: "modules"
@@ -55,19 +65,19 @@ jobs:
   # ── 4. Lint ─────────────────────────────────────────────────────────────────
   lint:
     needs: [fmt]
-    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-lint.yml@main
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-lint.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
 
   # ── 5. Security (Trivy) ──────────────────────────────────────────────────────
   security:
     needs: [fmt]
-    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-security.yml@main
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-security.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
 
   # ── 6. Security (tfsec) ──────────────────────────────────────────────────────
   tfsec:
     needs: [fmt]
-    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-tfsec.yml@main
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-tfsec.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
 
   # ── 6. Test module hygiene ──────────────────────────────────────────────────
   test-tidy:
     needs: [fmt]
-    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-test-tidy.yml@main
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-test-tidy.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43

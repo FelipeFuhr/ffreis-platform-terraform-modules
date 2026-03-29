@@ -14,6 +14,6 @@ permissions:
 
 jobs:
   checkov:
-    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-checkov.yml@main
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-checkov.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
     with:
       scan-directory: "."

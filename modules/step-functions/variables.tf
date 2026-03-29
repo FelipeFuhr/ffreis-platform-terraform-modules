@@ -63,7 +63,7 @@ variable "log_include_execution_data" {
 variable "log_retention_days" {
   description = "CloudWatch log retention for execution logs."
   type        = number
-  default     = 30
+  default     = 365
 }
 
 variable "log_kms_key_arn" {

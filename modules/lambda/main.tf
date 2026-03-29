@@ -76,6 +76,7 @@ resource "aws_cloudwatch_log_group" "lambda" {
 # Lambda function
 # ---------------------------------------------------------------------------
 resource "aws_lambda_function" "this" {
+  #checkov:skip=CKV_AWS_272:Code signing requires a pre-existing Code Signing Config; enforce in the calling stack where the profile ARN is known.
   function_name = var.function_name
   description   = var.description
   role          = local.role_arn

@@ -90,9 +90,9 @@ variable "target_groups" {
     output so listeners and ECS services can reference target group ARNs.
   EOT
   type = map(object({
-    port             = number
-    protocol         = optional(string, "HTTP")
-    target_type      = optional(string, "ip") # ip | instance | lambda
+    port                 = number
+    protocol             = optional(string, "HTTP")
+    target_type          = optional(string, "ip") # ip | instance | lambda
     deregistration_delay = optional(number, 30)
     health_check = optional(object({
       path                = optional(string, "/")
@@ -122,7 +122,7 @@ variable "https_listener_rules" {
     target_group = string
     priority     = number
     conditions = list(object({
-      field  = string       # "path-pattern" | "host-header"
+      field  = string # "path-pattern" | "host-header"
       values = list(string)
     }))
   }))

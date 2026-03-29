@@ -74,13 +74,13 @@ resource "aws_lb_target_group" "this" {
 # otherwise forwards directly to the first target group.
 # ---------------------------------------------------------------------------
 resource "aws_lb_listener" "http" {
-  count             = var.http_redirect_to_https || !var.create_https_listener ? 1 : 0
+  count             = 1
   load_balancer_arn = aws_lb.this.arn
   port              = 80
   protocol          = "HTTP"
 
   dynamic "default_action" {
-    for_each = var.http_redirect_to_https && var.create_https_listener ? [1] : []
+    for_each = var.create_https_listener ? [1] : []
     content {
       type = "redirect"
       redirect {
@@ -92,10 +92,22 @@ resource "aws_lb_listener" "http" {
   }
 
   dynamic "default_action" {
-    for_each = (!var.http_redirect_to_https || !var.create_https_listener) && length(var.target_groups) > 0 ? [1] : []
+    for_each = (!var.create_https_listener) && length(var.target_groups) > 0 ? [1] : []
     content {
       type             = "forward"
       target_group_arn = aws_lb_target_group.this[keys(var.target_groups)[0]].arn
+    }
+  }
+
+  dynamic "default_action" {
+    for_each = (!var.create_https_listener) && length(var.target_groups) == 0 ? [1] : []
+    content {
+      type = "fixed-response"
+      fixed_response {
+        content_type = "text/plain"
+        message_body = "Not Found"
+        status_code  = "404"
+      }
     }
   }
 

@@ -93,7 +93,7 @@ variable "port" {
 variable "multi_az" {
   description = "Enable Multi-AZ deployment for high availability."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "db_subnet_group_name" {
@@ -175,7 +175,13 @@ variable "option_group_name" {
 variable "enabled_cloudwatch_logs_exports" {
   description = "Log types to export to CloudWatch (e.g. ['postgresql', 'upgrade'] or ['error', 'slowquery'])."
   type        = list(string)
-  default     = []
+  default     = ["postgresql", "upgrade"]
+}
+
+variable "iam_database_authentication_enabled" {
+  description = "Enable IAM database authentication."
+  type        = bool
+  default     = true
 }
 
 variable "monitoring_interval" {

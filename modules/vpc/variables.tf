@@ -64,13 +64,19 @@ variable "enable_flow_logs" {
 variable "flow_logs_retention_days" {
   description = "CloudWatch log retention for VPC Flow Logs."
   type        = number
-  default     = 90
+  default     = 365
 }
 
 variable "flow_logs_kms_key_arn" {
   description = "KMS key ARN for encrypting Flow Log CloudWatch log group. null = AWS-managed."
   type        = string
   default     = null
+}
+
+variable "restrict_default_security_group" {
+  description = "Restrict the default security group to no ingress/egress."
+  type        = bool
+  default     = true
 }
 
 variable "create_database_subnet_group" {

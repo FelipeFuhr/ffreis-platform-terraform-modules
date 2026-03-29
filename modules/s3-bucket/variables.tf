@@ -12,7 +12,7 @@ variable "versioning_enabled" {
 variable "sse_algorithm" {
   description = "Server-side encryption algorithm. 'AES256' or 'aws:kms'."
   type        = string
-  default     = "AES256"
+  default     = "aws:kms"
 
   validation {
     condition     = contains(["AES256", "aws:kms"], var.sse_algorithm)
@@ -50,6 +50,12 @@ variable "lifecycle_rules" {
     noncurrent_version_expiration_days = optional(number, null)
   }))
   default = []
+}
+
+variable "abort_incomplete_multipart_upload_days" {
+  description = "Days after initiation to abort incomplete multipart uploads. Set to 0 to disable."
+  type        = number
+  default     = 7
 }
 
 variable "logging_target_bucket" {

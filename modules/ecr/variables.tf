@@ -21,13 +21,13 @@ variable "scan_on_push" {
 }
 
 variable "encryption_type" {
-  description = "Encryption type: 'AES256' (AWS-managed) or 'KMS' (customer-managed)."
+  description = "Encryption type for the repository. Must be 'KMS' to satisfy compliance checks."
   type        = string
-  default     = "AES256"
+  default     = "KMS"
 
   validation {
-    condition     = contains(["AES256", "KMS"], var.encryption_type)
-    error_message = "encryption_type must be 'AES256' or 'KMS'."
+    condition     = var.encryption_type == "KMS"
+    error_message = "encryption_type must be 'KMS'."
   }
 }
 

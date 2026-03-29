@@ -206,10 +206,10 @@ locals {
 resource "aws_cloudwatch_metric_alarm" "ecs_cpu" {
   for_each = local.ecs_alarms_flat
 
-  alarm_name          = "${var.name_prefix}-ecs-${each.value.service}-cpu"
-  alarm_description   = "ECS service ${each.value.service} CPU exceeded ${each.value.config.cpu_threshold}%"
-  namespace           = "AWS/ECS"
-  metric_name         = "CPUUtilization"
+  alarm_name        = "${var.name_prefix}-ecs-${each.value.service}-cpu"
+  alarm_description = "ECS service ${each.value.service} CPU exceeded ${each.value.config.cpu_threshold}%"
+  namespace         = "AWS/ECS"
+  metric_name       = "CPUUtilization"
   dimensions = {
     ClusterName = each.value.cluster
     ServiceName = each.value.service
@@ -229,10 +229,10 @@ resource "aws_cloudwatch_metric_alarm" "ecs_cpu" {
 resource "aws_cloudwatch_metric_alarm" "ecs_memory" {
   for_each = local.ecs_alarms_flat
 
-  alarm_name          = "${var.name_prefix}-ecs-${each.value.service}-memory"
-  alarm_description   = "ECS service ${each.value.service} memory exceeded ${each.value.config.memory_threshold}%"
-  namespace           = "AWS/ECS"
-  metric_name         = "MemoryUtilization"
+  alarm_name        = "${var.name_prefix}-ecs-${each.value.service}-memory"
+  alarm_description = "ECS service ${each.value.service} memory exceeded ${each.value.config.memory_threshold}%"
+  namespace         = "AWS/ECS"
+  metric_name       = "MemoryUtilization"
   dimensions = {
     ClusterName = each.value.cluster
     ServiceName = each.value.service

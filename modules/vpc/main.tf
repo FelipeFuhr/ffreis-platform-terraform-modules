@@ -22,6 +22,19 @@ resource "aws_vpc" "this" {
 }
 
 # ---------------------------------------------------------------------------
+# Default Security Group hardening (CKV2_AWS_12)
+# ---------------------------------------------------------------------------
+resource "aws_default_security_group" "this" {
+  count  = var.restrict_default_security_group ? 1 : 0
+  vpc_id = aws_vpc.this.id
+
+  ingress = []
+  egress  = []
+
+  tags = merge(var.tags, { Name = "${var.name}-default-sg" })
+}
+
+# ---------------------------------------------------------------------------
 # Internet Gateway (for public subnets)
 # ---------------------------------------------------------------------------
 resource "aws_internet_gateway" "this" {
@@ -185,6 +198,16 @@ data "aws_iam_policy_document" "flow_logs_write" {
     actions = [
       "logs:CreateLogStream",
       "logs:PutLogEvents",
+    ]
+    resources = ["${aws_cloudwatch_log_group.flow_logs[0].arn}:*"]
+  }
+
+  # Describe actions are not resource-scoped in IAM, so they must stay "*" in a
+  # separate statement. Keeping write actions scoped avoids Checkov CKV_AWS_356
+  # and CKV_AWS_111.
+  statement {
+    effect = local.iam_effect_allow
+    actions = [
       "logs:DescribeLogGroups",
       "logs:DescribeLogStreams",
     ]

@@ -18,8 +18,8 @@ variable "gateway_endpoints" {
     Route table IDs that should reach the endpoint are provided in
     gateway_route_table_ids.
   EOT
-  type    = map(string)
-  default = {}
+  type        = map(string)
+  default     = {}
 
   # Example:
   # gateway_endpoints = {
@@ -44,8 +44,8 @@ variable "interface_endpoints" {
     'sts', 'secretsmanager', 'kms', 'logs', 'monitoring', 'sqs', 'sns',
     'lambda', 'execute-api', 'states', 'elasticloadbalancing'.
   EOT
-  type    = map(string)
-  default = {}
+  type        = map(string)
+  default     = {}
 }
 
 variable "interface_subnet_ids" {
