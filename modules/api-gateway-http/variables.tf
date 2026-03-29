@@ -79,7 +79,7 @@ variable "access_log_arn" {
 variable "access_log_format" {
   description = "Access log format for the stage. Only used when access_log_arn is set."
   type        = string
-  default = "{\"httpMethod\":\"$context.httpMethod\",\"integrationErrorMessage\":\"$context.integrationErrorMessage\",\"ip\":\"$context.identity.sourceIp\",\"path\":\"$context.path\",\"requestId\":\"$context.requestId\",\"requestTime\":\"$context.requestTime\",\"responseLength\":\"$context.responseLength\",\"routeKey\":\"$context.routeKey\",\"status\":\"$context.status\",\"userAgent\":\"$context.identity.userAgent\"}"
+  default     = "{\"httpMethod\":\"$context.httpMethod\",\"integrationErrorMessage\":\"$context.integrationErrorMessage\",\"ip\":\"$context.identity.sourceIp\",\"path\":\"$context.path\",\"requestId\":\"$context.requestId\",\"requestTime\":\"$context.requestTime\",\"responseLength\":\"$context.responseLength\",\"routeKey\":\"$context.routeKey\",\"status\":\"$context.status\",\"userAgent\":\"$context.identity.userAgent\"}"
 }
 
 variable "throttle_burst_limit" {
