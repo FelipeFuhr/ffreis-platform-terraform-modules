@@ -99,17 +99,17 @@ resource "aws_lambda_function" "this" {
   kms_key_arn                    = var.kms_key_arn
 
   dynamic "environment" {
-    for_each = length(var.environment_variables) > 0 ? toset(["enabled"]) : toset([])
+    for_each = length(var.environment_variables) > 0 ? [var.environment_variables] : []
     content {
-      variables = var.environment_variables
+      variables = environment.value
     }
   }
 
   dynamic "vpc_config" {
-    for_each = length(var.vpc_subnet_ids) > 0 ? toset(["enabled"]) : toset([])
+    for_each = length(var.vpc_subnet_ids) > 0 ? [{ subnet_ids = var.vpc_subnet_ids, security_group_ids = var.vpc_security_group_ids }] : []
     content {
-      subnet_ids         = var.vpc_subnet_ids
-      security_group_ids = var.vpc_security_group_ids
+      subnet_ids         = vpc_config.value.subnet_ids
+      security_group_ids = vpc_config.value.security_group_ids
     }
   }
 
