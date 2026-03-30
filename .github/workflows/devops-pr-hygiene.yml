@@ -18,7 +18,7 @@ jobs:
     if: github.event_name == 'pull_request'
     permissions:
       contents: read
-    uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-semantic-pr.yml@main
+    uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-semantic-pr.yml@db96a29ef267ae7a435013bf158470bba5fb4e2a
 
   actionlint:
     if: github.event_name == 'pull_request'
@@ -42,4 +42,3 @@ jobs:
           {"label":"terraform","patterns":["**/*.tf","modules/**","examples/**"]},
           {"label":"docs","patterns":["**/*.md"]}
         ]
-
