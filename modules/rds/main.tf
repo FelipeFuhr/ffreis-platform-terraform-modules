@@ -41,9 +41,8 @@ resource "aws_iam_role_policy_attachment" "monitoring" {
 # ---------------------------------------------------------------------------
 # RDS instance
 # ---------------------------------------------------------------------------
-# nosemgrep: terraform.aws.security.aws-db-instance-no-logging.aws-db-instance-no-logging
-# enabled_cloudwatch_logs_exports is always set below (engine-specific defaults on lines 84-86).
-resource "aws_db_instance" "this" {
+# enabled_cloudwatch_logs_exports is always set below (engine-specific defaults).
+resource "aws_db_instance" "this" { # nosemgrep: terraform.aws.security.aws-db-instance-no-logging.aws-db-instance-no-logging
   #checkov:skip=CKV2_AWS_30:Query logging is engine-specific and typically enforced via parameter groups at the stack level.
   identifier = var.identifier
 

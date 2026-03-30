@@ -99,14 +99,14 @@ resource "aws_lambda_function" "this" {
   kms_key_arn                    = var.kms_key_arn
 
   dynamic "environment" {
-    for_each = length(var.environment_variables) > 0 ? { enabled = true } : {}
+    for_each = length(var.environment_variables) > 0 ? toset(["enabled"]) : toset([])
     content {
       variables = var.environment_variables
     }
   }
 
   dynamic "vpc_config" {
-    for_each = length(var.vpc_subnet_ids) > 0 ? { enabled = true } : {}
+    for_each = length(var.vpc_subnet_ids) > 0 ? toset(["enabled"]) : toset([])
     content {
       subnet_ids         = var.vpc_subnet_ids
       security_group_ids = var.vpc_security_group_ids
@@ -114,7 +114,7 @@ resource "aws_lambda_function" "this" {
   }
 
   dynamic "dead_letter_config" {
-    for_each = var.dead_letter_target_arn != null ? { enabled = true } : {}
+    for_each = var.dead_letter_target_arn != null ? toset(["enabled"]) : toset([])
     content {
       target_arn = var.dead_letter_target_arn
     }
@@ -149,10 +149,10 @@ resource "aws_lambda_event_source_mapping" "this" {
   function_response_types            = each.value.function_response_types
 
   dynamic "filter_criteria" {
-    for_each = length(each.value.filter_criteria) > 0 ? { enabled = true } : {}
+    for_each = length(each.value.filter_criteria) > 0 ? toset(["enabled"]) : toset([])
     content {
       dynamic "filter" {
-        for_each = { for idx, f in each.value.filter_criteria : idx => f }
+        for_each = { for idx, f in each.value.filter_criteria : tostring(idx) => f }
         content {
           pattern = filter.value.pattern
         }
