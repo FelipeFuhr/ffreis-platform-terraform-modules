@@ -10,10 +10,10 @@ output "trail_name" {
 
 output "cloudwatch_log_group_arn" {
   description = "ARN of the CloudWatch Logs log group (empty if CW logs disabled)."
-  value       = var.enable_cloudwatch_logs ? aws_cloudwatch_log_group.trail[0].arn : ""
+  value       = var.enable_cloudwatch_logs ? try(aws_cloudwatch_log_group.trail[0].arn, aws_cloudwatch_log_group.trail.arn) : ""
 }
 
 output "cloudwatch_role_arn" {
   description = "ARN of the IAM role used to push events to CloudWatch Logs."
-  value       = var.enable_cloudwatch_logs ? aws_iam_role.cloudtrail[0].arn : ""
+  value       = var.enable_cloudwatch_logs ? try(aws_iam_role.cloudtrail[0].arn, aws_iam_role.cloudtrail.arn) : ""
 }

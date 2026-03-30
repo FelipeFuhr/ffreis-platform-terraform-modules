@@ -71,15 +71,27 @@ variable "auto_deploy" {
 }
 
 variable "access_log_arn" {
-  description = "CloudWatch log group ARN for access logs. null = disabled."
+  description = "CloudWatch log group ARN for access logs. null = create a log group in this module."
   type        = string
   default     = null
 }
 
 variable "access_log_format" {
-  description = "Access log format for the stage. Only used when access_log_arn is set."
+  description = "Access log format for the stage."
   type        = string
   default     = "{\"httpMethod\":\"$context.httpMethod\",\"integrationErrorMessage\":\"$context.integrationErrorMessage\",\"ip\":\"$context.identity.sourceIp\",\"path\":\"$context.path\",\"requestId\":\"$context.requestId\",\"requestTime\":\"$context.requestTime\",\"responseLength\":\"$context.responseLength\",\"routeKey\":\"$context.routeKey\",\"status\":\"$context.status\",\"userAgent\":\"$context.identity.userAgent\"}"
+}
+
+variable "access_log_retention_days" {
+  description = "Retention in days for the access log group created by this module (when access_log_arn is null)."
+  type        = number
+  default     = 30
+}
+
+variable "access_log_kms_key_arn" {
+  description = "KMS key ARN for encrypting the access log group created by this module (when access_log_arn is null)."
+  type        = string
+  default     = null
 }
 
 variable "throttle_burst_limit" {

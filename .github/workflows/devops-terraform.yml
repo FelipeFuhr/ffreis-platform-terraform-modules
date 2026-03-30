@@ -38,10 +38,31 @@ jobs:
       lint-path: "."
 
   trivy-config:
-    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-security.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
     needs: [fmt]
-    with:
-      scan-ref: "."
+    name: Trivy (Terraform config)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Trivy config scan (SARIF)
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          format: sarif
+          output: trivy.sarif
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@d4b3ca9fa7f69d38bfcd667bdc45bc373d16277e
+        with:
+          sarif_file: trivy.sarif
 
   tfsec:
     uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-tfsec.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43

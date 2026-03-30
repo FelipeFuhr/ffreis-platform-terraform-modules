@@ -83,7 +83,6 @@ jobs:
       # Dependency/secret scanning is handled by dedicated jobs (SCA/secret-scan).
       - name: Trivy config scan (SARIF)
         id: trivy
-        continue-on-error: true
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           scan-type: config
@@ -100,7 +99,8 @@ jobs:
           sarif_file: trivy.sarif
 
       - name: Trivy findings (table)
-        if: steps.trivy.outcome == 'failure'
+        if: failure()
+        continue-on-error: true
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           scan-type: config
@@ -108,10 +108,6 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: "0"
           format: table
-
-      - name: Fail if Trivy found issues
-        if: steps.trivy.outcome == 'failure'
-        run: exit 1
 
   # ── 6. Security (tfsec) ──────────────────────────────────────────────────────
   tfsec:

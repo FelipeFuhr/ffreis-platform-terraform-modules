@@ -63,6 +63,25 @@ resource "aws_apigatewayv2_route" "this" {
 }
 
 # ---------------------------------------------------------------------------
+# Access logs (CloudWatch Logs)
+# Trivy AWS-0001: enforce access logging on API Gateway stages.
+# If the caller doesn't supply a destination log group ARN, create one.
+# ---------------------------------------------------------------------------
+resource "aws_cloudwatch_log_group" "access" {
+  count = var.access_log_arn == null ? 1 : 0
+
+  name              = "/aws/apigateway/${var.name}/${var.stage_name}"
+  retention_in_days = var.access_log_retention_days
+  kms_key_id        = var.access_log_kms_key_arn
+
+  tags = var.tags
+}
+
+locals {
+  access_log_destination_arn = var.access_log_arn != null ? var.access_log_arn : aws_cloudwatch_log_group.access[0].arn
+}
+
+# ---------------------------------------------------------------------------
 # Stage
 # ---------------------------------------------------------------------------
 resource "aws_apigatewayv2_stage" "this" {
@@ -70,12 +89,9 @@ resource "aws_apigatewayv2_stage" "this" {
   name        = var.stage_name
   auto_deploy = var.auto_deploy
 
-  dynamic "access_log_settings" {
-    for_each = var.access_log_arn != null ? [1] : []
-    content {
-      destination_arn = var.access_log_arn
-      format          = var.access_log_format
-    }
+  access_log_settings {
+    destination_arn = local.access_log_destination_arn
+    format          = var.access_log_format
   }
 
   default_route_settings {

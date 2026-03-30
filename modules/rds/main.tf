@@ -4,11 +4,6 @@ locals {
   # Enhanced monitoring requires an IAM role.
   create_monitoring_role = var.monitoring_interval > 0
 
-  # Enable CloudWatch log exports by default so the instance isn't created without logging.
-  # The caller can override with var.enabled_cloudwatch_logs_exports.
-  default_cloudwatch_logs_exports = var.engine == "postgres" ? ["postgresql", "upgrade"] : ["error", "general", "slowquery"]
-  cloudwatch_logs_exports         = length(var.enabled_cloudwatch_logs_exports) > 0 ? var.enabled_cloudwatch_logs_exports : local.default_cloudwatch_logs_exports
-
   iam_effect_allow           = "Allow"
   iam_action_sts_assume_role = "sts:AssumeRole"
   iam_principal_type_service = "Service"
@@ -86,7 +81,9 @@ resource "aws_db_instance" "this" {
   parameter_group_name = var.parameter_group_name
   option_group_name    = var.option_group_name
 
-  enabled_cloudwatch_logs_exports = local.cloudwatch_logs_exports
+  enabled_cloudwatch_logs_exports = length(var.enabled_cloudwatch_logs_exports) > 0 ? var.enabled_cloudwatch_logs_exports : (
+    var.engine == "postgres" ? ["postgresql", "upgrade"] : ["error", "general", "slowquery"]
+  )
 
   iam_database_authentication_enabled = var.iam_database_authentication_enabled
 
