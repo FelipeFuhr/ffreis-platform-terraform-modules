@@ -1,0 +1,120 @@
+name: CI
+
+# Triggers: every PR and every push to main.
+# Job dependency graph:
+#
+#   secret-scan ─┐
+#   fmt ─────────┼─→ validate   (per module)
+#                ├─→ lint
+#                ├─→ security   (trivy)
+#                ├─→ tfsec
+#                └─→ test-tidy  (Go test module hygiene)
+#
+# Any failure blocks all downstream jobs.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ── 1. Secret scan ─────────────────────────────────────────────────────────
+  secret-scan:
+    name: Secret Scan
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks scan
+        id: gitleaks
+        uses: gacts/gitleaks@9d471d3bda7ee95b6fa416fdfe7e87cf393554d5
+        with:
+          version: 8.24.3
+          config-path: .gitleaks.toml
+          path: .
+          github-token: ${{ github.token }}
+
+  fmt:
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-fmt.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
+    with:
+      working-directory: "."
+
+  # ── 3. Validate (all modules) ───────────────────────────────────────────────
+  validate:
+    needs: [fmt]
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-validate.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
+    with:
+      validate-all-modules: true
+      modules-dir: "modules"
+
+  # ── 4. Lint ─────────────────────────────────────────────────────────────────
+  lint:
+    needs: [fmt]
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-lint.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
+
+  # ── 5. Security (Trivy) ──────────────────────────────────────────────────────
+  security:
+    needs: [fmt]
+    name: Security (Trivy)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      # Only run IaC misconfiguration scanning here.
+      # Dependency/secret scanning is handled by dedicated jobs (SCA/secret-scan).
+      - name: Trivy config scan (SARIF)
+        id: trivy
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          format: sarif
+          output: trivy.sarif
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@d4b3ca9fa7f69d38bfcd667bdc45bc373d16277e
+        with:
+          sarif_file: trivy.sarif
+
+      - name: Trivy findings (table)
+        if: failure()
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "0"
+          format: table
+
+  # ── 6. Security (tfsec) ──────────────────────────────────────────────────────
+  tfsec:
+    needs: [fmt]
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-tfsec.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
+
+  # ── 6. Test module hygiene ──────────────────────────────────────────────────
+  test-tidy:
+    needs: [fmt]
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-test-tidy.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
