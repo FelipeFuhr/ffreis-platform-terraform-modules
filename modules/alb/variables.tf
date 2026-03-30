@@ -29,12 +29,6 @@ variable "certificate_arn" {
   }
 }
 
-variable "ssl_policy" {
-  description = "HTTPS listener SSL policy."
-  type        = string
-  default     = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-}
-
 variable "idle_timeout" {
   description = "Connection idle timeout in seconds."
   type        = number

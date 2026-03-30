@@ -80,17 +80,6 @@ variable "reserved_concurrent_executions" {
   default     = -1
 }
 
-variable "tracing_mode" {
-  description = "X-Ray tracing mode: 'PassThrough' or 'Active'."
-  type        = string
-  default     = "Active"
-
-  validation {
-    condition     = contains(["PassThrough", "Active"], var.tracing_mode)
-    error_message = "tracing_mode must be 'PassThrough' or 'Active'."
-  }
-}
-
 # --- VPC ---
 variable "vpc_subnet_ids" {
   description = "Subnet IDs for VPC-attached Lambda. Empty = no VPC attachment."

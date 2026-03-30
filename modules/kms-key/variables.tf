@@ -19,12 +19,6 @@ variable "deletion_window_in_days" {
   }
 }
 
-variable "enable_key_rotation" {
-  description = "Rotate the key material annually. Strongly recommended."
-  type        = bool
-  default     = true
-}
-
 variable "multi_region" {
   description = "Create a multi-Region primary key."
   type        = bool

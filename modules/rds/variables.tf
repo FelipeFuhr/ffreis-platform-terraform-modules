@@ -173,7 +173,7 @@ variable "option_group_name" {
 }
 
 variable "enabled_cloudwatch_logs_exports" {
-  description = "Log types to export to CloudWatch (e.g. ['postgresql', 'upgrade'] or ['error', 'slowquery'])."
+  description = "Log types to export to CloudWatch (e.g. ['postgresql', 'upgrade'] or ['error', 'slowquery']). Empty uses secure defaults per engine."
   type        = list(string)
   default     = ["postgresql", "upgrade"]
 }

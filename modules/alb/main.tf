@@ -100,7 +100,8 @@ resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.this.arn
   port              = 443
   protocol          = "HTTPS"
-  ssl_policy        = var.ssl_policy
+  # Enforce a modern TLS policy (TLS 1.2/1.3 only).
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-Res-2021-06"
   certificate_arn   = var.certificate_arn
 
   # Default: return 404 — explicit rules below direct traffic.

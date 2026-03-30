@@ -37,7 +37,8 @@ data "aws_partition" "current" {}
 
 resource "aws_ecr_repository" "this" {
   name                 = var.name
-  image_tag_mutability = var.image_tag_mutability
+  # Enforce immutable tags to prevent overwriting published images.
+  image_tag_mutability = "IMMUTABLE"
   force_delete         = var.force_delete
 
   image_scanning_configuration {

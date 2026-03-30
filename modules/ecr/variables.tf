@@ -3,17 +3,6 @@ variable "name" {
   type        = string
 }
 
-variable "image_tag_mutability" {
-  description = "Tag mutability: 'MUTABLE' or 'IMMUTABLE'. Immutable prevents overwriting existing tags."
-  type        = string
-  default     = "IMMUTABLE"
-
-  validation {
-    condition     = contains(["MUTABLE", "IMMUTABLE"], var.image_tag_mutability)
-    error_message = "image_tag_mutability must be 'MUTABLE' or 'IMMUTABLE'."
-  }
-}
-
 variable "scan_on_push" {
   description = "Scan images for vulnerabilities on push."
   type        = bool

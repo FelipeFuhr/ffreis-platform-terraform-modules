@@ -121,7 +121,7 @@ resource "aws_lambda_function" "this" {
   }
 
   tracing_config {
-    mode = var.tracing_mode
+    mode = "Active"
   }
 
   # Ensure the log group exists before the function (avoid race on first deploy).
