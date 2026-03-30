@@ -59,9 +59,8 @@ variable "abort_incomplete_multipart_upload_days" {
 }
 
 variable "logging_target_bucket" {
-  description = "S3 bucket to receive access logs. Leave empty to skip access logging."
+  description = "S3 bucket to receive access logs. Pass an empty string only for the logging bucket itself to break the circular dependency."
   type        = string
-  default     = ""
 }
 
 variable "logging_target_prefix" {
