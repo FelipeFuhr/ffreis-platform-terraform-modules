@@ -33,9 +33,8 @@ variable "enable_log_file_validation" {
 }
 
 variable "kms_key_arn" {
-  description = "KMS key ARN for encrypting CloudTrail logs in S3. Strongly recommended."
+  description = "KMS key ARN for encrypting CloudTrail logs in S3. Required — CloudTrail must be encrypted at rest."
   type        = string
-  default     = null
 }
 
 variable "enable_cloudwatch_logs" {
