@@ -37,12 +37,6 @@ variable "kms_key_arn" {
   type        = string
 }
 
-variable "enable_cloudwatch_logs" {
-  description = "Stream CloudTrail events to CloudWatch Logs."
-  type        = bool
-  default     = true
-}
-
 variable "cloudwatch_logs_retention_days" {
   description = "Retention period for the CloudWatch Logs log group."
   type        = number

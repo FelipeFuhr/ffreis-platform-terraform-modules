@@ -12,10 +12,10 @@ locals {
 }
 
 # ---------------------------------------------------------------------------
-# CloudWatch Logs destination (conditional on enable_cloudwatch_logs)
+# CloudWatch Logs destination
+# Required by Checkov CKV2_AWS_10 (CloudTrail integrated with CloudWatch Logs).
 # ---------------------------------------------------------------------------
 resource "aws_cloudwatch_log_group" "trail" {
-  count             = var.enable_cloudwatch_logs ? 1 : 0
   name              = "/cloudtrail/${var.name}"
   retention_in_days = var.cloudwatch_logs_retention_days
   kms_key_id        = var.cloudwatch_logs_kms_key_arn
@@ -24,8 +24,6 @@ resource "aws_cloudwatch_log_group" "trail" {
 }
 
 data "aws_iam_policy_document" "cloudtrail_assume" {
-  count = var.enable_cloudwatch_logs ? 1 : 0
-
   statement {
     effect  = local.iam_effect_allow
     actions = [local.iam_action_sts_assume_role]
@@ -37,30 +35,26 @@ data "aws_iam_policy_document" "cloudtrail_assume" {
 }
 
 data "aws_iam_policy_document" "cloudtrail_logs_write" {
-  count = var.enable_cloudwatch_logs ? 1 : 0
-
   statement {
     effect = local.iam_effect_allow
     actions = [
       "logs:CreateLogStream",
       "logs:PutLogEvents",
     ]
-    resources = ["${aws_cloudwatch_log_group.trail[0].arn}:*"]
+    resources = ["${aws_cloudwatch_log_group.trail.arn}:*"]
   }
 }
 
 resource "aws_iam_role" "cloudtrail" {
-  count              = var.enable_cloudwatch_logs ? 1 : 0
   name               = "${var.name}-cloudtrail-cw"
-  assume_role_policy = data.aws_iam_policy_document.cloudtrail_assume[0].json
+  assume_role_policy = data.aws_iam_policy_document.cloudtrail_assume.json
   tags               = var.tags
 }
 
 resource "aws_iam_role_policy" "cloudtrail_logs" {
-  count  = var.enable_cloudwatch_logs ? 1 : 0
   name   = "write-cloudtrail-logs"
-  role   = aws_iam_role.cloudtrail[0].id
-  policy = data.aws_iam_policy_document.cloudtrail_logs_write[0].json
+  role   = aws_iam_role.cloudtrail.id
+  policy = data.aws_iam_policy_document.cloudtrail_logs_write.json
 }
 
 # ---------------------------------------------------------------------------
@@ -160,8 +154,8 @@ resource "aws_cloudtrail" "this" {
   enable_log_file_validation    = var.enable_log_file_validation
   kms_key_id                    = var.kms_key_arn
 
-  cloud_watch_logs_group_arn = var.enable_cloudwatch_logs ? "${aws_cloudwatch_log_group.trail[0].arn}:*" : null
-  cloud_watch_logs_role_arn  = var.enable_cloudwatch_logs ? aws_iam_role.cloudtrail[0].arn : null
+  cloud_watch_logs_group_arn = "${aws_cloudwatch_log_group.trail.arn}:*"
+  cloud_watch_logs_role_arn  = aws_iam_role.cloudtrail.arn
   sns_topic_name             = aws_sns_topic.cloudtrail.name
 
   dynamic "event_selector" {
