@@ -7,9 +7,9 @@ resource "aws_kms_key" "this" {
   description             = var.description
   deletion_window_in_days = var.deletion_window_in_days
   # Enforce annual rotation for all customer managed keys.
-  enable_key_rotation     = true
-  multi_region            = var.multi_region
-  policy                  = local.effective_policy
+  enable_key_rotation = true
+  multi_region        = var.multi_region
+  policy              = local.effective_policy
 
   tags = var.tags
 }

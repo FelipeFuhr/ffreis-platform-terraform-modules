@@ -70,7 +70,48 @@ jobs:
   # ── 5. Security (Trivy) ──────────────────────────────────────────────────────
   security:
     needs: [fmt]
-    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-security.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
+    name: Security (Trivy)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      # Only run IaC misconfiguration scanning here.
+      # Dependency/secret scanning is handled by dedicated jobs (SCA/secret-scan).
+      - name: Trivy config scan (SARIF)
+        id: trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          format: sarif
+          output: trivy.sarif
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@d4b3ca9fa7f69d38bfcd667bdc45bc373d16277e
+        with:
+          sarif_file: trivy.sarif
+
+      - name: Trivy findings (table)
+        if: steps.trivy.outcome == 'failure'
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "0"
+          format: table
+
+      - name: Fail if Trivy found issues
+        if: steps.trivy.outcome == 'failure'
+        run: exit 1
 
   # ── 6. Security (tfsec) ──────────────────────────────────────────────────────
   tfsec:

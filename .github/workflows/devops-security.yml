@@ -37,13 +37,48 @@ jobs:
           github-token: ${{ github.token }}
 
   trivy-fs:
+    name: Trivy (Terraform config)
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
-    uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-scan-trivy-fs.yml@c3e3e0a44d4b79697f1babaa9bf287d1b264da52
-    with:
-      scan-ref: "."
-      upload-sarif: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+
+      - name: Trivy config scan (SARIF)
+        id: trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          format: sarif
+          output: trivy.sarif
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@d4b3ca9fa7f69d38bfcd667bdc45bc373d16277e
+        with:
+          sarif_file: trivy.sarif
+
+      - name: Trivy findings (table)
+        if: steps.trivy.outcome == 'failure'
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "0"
+          format: table
+
+      - name: Fail if Trivy found issues
+        if: steps.trivy.outcome == 'failure'
+        run: exit 1
 
   grype-fs:
     permissions:
