@@ -67,12 +67,6 @@ variable "advanced_security_mode" {
   }
 }
 
-variable "kms_key_id" {
-  description = "KMS key ARN for encrypting the user pool. null = AWS-managed."
-  type        = string
-  default     = null
-}
-
 variable "schema_attributes" {
   description = "Custom user pool schema attributes."
   type = list(object({

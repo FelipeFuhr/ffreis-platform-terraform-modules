@@ -3,8 +3,6 @@ resource "aws_cognito_user_pool" "this" {
   alias_attributes    = var.alias_attributes
   deletion_protection = var.deletion_protection
 
-  kms_key_id = var.kms_key_id
-
   auto_verified_attributes = var.auto_verified_attributes
   mfa_configuration        = var.mfa_configuration
 
