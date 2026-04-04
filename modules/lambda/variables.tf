@@ -20,7 +20,25 @@ variable "runtime" {
 }
 
 variable "filename" {
-  description = "Path to the deployment package (zip). Mutually exclusive with image_uri."
+  description = "Path to the deployment package (zip). Mutually exclusive with image_uri and s3_bucket."
+  type        = string
+  default     = null
+}
+
+variable "s3_bucket" {
+  description = "S3 bucket containing the deployment package. Must be set together with s3_key. Mutually exclusive with filename and image_uri."
+  type        = string
+  default     = null
+}
+
+variable "s3_key" {
+  description = "S3 object key for the deployment package zip. Must be set together with s3_bucket."
+  type        = string
+  default     = null
+}
+
+variable "s3_object_version" {
+  description = "S3 object version ID of the deployment package. Optional."
   type        = string
   default     = null
 }

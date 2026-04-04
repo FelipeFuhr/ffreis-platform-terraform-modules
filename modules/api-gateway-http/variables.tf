@@ -44,7 +44,7 @@ variable "routes" {
     Map of 'METHOD /path' → integration config.
     integration_uri: Lambda invoke ARN or HTTP endpoint.
     integration_type: 'AWS_PROXY' (Lambda) or 'HTTP_PROXY'.
-    authorizer: 'jwt' to require the JWT authorizer, or null for public.
+    authorizer: 'jwt' to require the JWT authorizer; null = NONE (public route).
     authorization_scopes: OAuth2 scopes required.
   EOT
   type = map(object({
