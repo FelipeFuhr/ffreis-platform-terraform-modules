@@ -120,4 +120,3 @@ jobs:
     uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-test-tidy.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
     with:
       go-version: "1.25.8"
-      test-dir: test
