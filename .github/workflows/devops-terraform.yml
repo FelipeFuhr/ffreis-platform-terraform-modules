@@ -35,10 +35,30 @@ jobs:
       modules-dir: "modules"
 
   lint:
-    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-lint.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
     needs: [fmt]
-    with:
-      lint-path: "."
+    name: Lint (tflint)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - uses: terraform-linters/setup-tflint@eb0f7c1b77f191dee552664e7884849ce3dd5176
+        with:
+          tflint_version: v0.50.3
+          cache: true
+          tflint_config_path: .tflint.hcl
+
+      - name: Init TFLint
+        working-directory: .
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: tflint --init
+
+      - name: Run TFLint
+        working-directory: .
+        run: tflint --recursive --format compact
 
   trivy-config:
     needs: [fmt]
