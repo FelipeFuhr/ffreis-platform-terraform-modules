@@ -17,6 +17,9 @@ data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 locals {
+#checkov:skip=CKV_AWS_144:This ephemeral Terratest fixture uses a single temporary bucket and does not provision the caller-managed replication destination required for CRR.
+#checkov:skip=CKV2_AWS_62:CloudTrail delivers logs directly to S3 and does not require bucket event notifications for this fixture.
+#checkov:skip=CKV_AWS_18:This ephemeral fixture bucket does not emit access logs because that would require a second dedicated logging bucket just for the test harness.
   trail_logs_prefix = "${var.trail_name}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
 }
 
@@ -30,12 +33,41 @@ resource "aws_s3_bucket_public_access_block" "trail" {
   bucket                  = aws_s3_bucket.trail.id
   block_public_acls       = true
   block_public_policy     = true
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "trail" {
+  bucket = aws_s3_bucket.trail.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      kms_master_key_id = aws_kms_key.trail.arn
+      sse_algorithm     = "aws:kms"
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "trail" {
+  bucket = aws_s3_bucket.trail.id
+
+  rule {
+    id     = "fixture-hygiene"
+    status = "Enabled"
+
+    filter {}
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 1
+    }
+  }
+}
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
 
 resource "aws_s3_bucket_versioning" "trail" {
   bucket = aws_s3_bucket.trail.id
+#checkov:skip=CKV_AWS_356:KMS key policies are attached to the key itself and must use '*' resources by AWS design.
+#checkov:skip=CKV_AWS_111:This test fixture key policy is constrained by principals and is required for CloudTrail service access.
+#checkov:skip=CKV_AWS_109:KMS key policies require wildcard resources on the key policy document; permissions are constrained by principals and usage context.
 
   versioning_configuration {
     status = "Enabled"
@@ -121,6 +153,7 @@ resource "aws_kms_key" "trail" {
   tags                    = var.tags
 }
 
+#checkov:skip=CKV_AWS_67:This Terratest fixture intentionally sets a single-region trail to keep AWS cost and test blast radius low while still exercising the module.
 module "cloudtrail" {
   source = "../../../modules/cloudtrail"
 

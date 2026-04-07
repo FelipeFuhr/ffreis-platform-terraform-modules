@@ -13,6 +13,8 @@ provider "aws" {
   region = "us-east-1"
 }
 
+#checkov:skip=CKV_AWS_144:This validate-only fixture verifies module inputs and does not provision the caller-managed replication destination required for cross-region replication.
+#checkov:skip=CKV2_AWS_62:SES inbound storage does not require native S3 event notifications because the receipt rule invokes Lambda directly.
 module "forwarder" {
   source = "../../../modules/ses-email-forwarder"
 
