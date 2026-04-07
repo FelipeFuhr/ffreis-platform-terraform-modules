@@ -71,15 +71,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
-      # Fail CI on HIGH/CRITICAL findings
-      - name: Trivy config scan (SARIF)
-        id: trivy
+      # Step 1: Run Trivy (print results, don't stop pipeline yet)
+      - name: Trivy config scan (table)
+        id: trivy_table
+        continue-on-error: true
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           scan-type: config
           scan-ref: .
           severity: HIGH,CRITICAL
           exit-code: "1"
+          format: table
+
+      # Step 2: Generate SARIF (for GitHub Security tab)
+      - name: Trivy config scan (SARIF)
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "0"
           format: sarif
           output: trivy.sarif
 
@@ -89,17 +100,12 @@ jobs:
         with:
           sarif_file: trivy.sarif
 
-      # ALWAYS show findings in logs (FIXED)
-      - name: Trivy findings (table)
-        if: always()
-        continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
-        with:
-          scan-type: config
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: "0"
-          format: table
+      # Step 3: Fail explicitly if issues found
+      - name: Fail if Trivy found issues
+        if: steps.trivy_table.outcome == 'failure'
+        run: |
+          echo "❌ Trivy found HIGH/CRITICAL issues"
+          exit 1
 
   # ── 6. Security (tfsec) ─────────────────────────────────────────────────────
   tfsec:
