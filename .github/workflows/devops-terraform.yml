@@ -8,9 +8,6 @@ on:
   merge_group:
     types: [checks_requested]
     branches: [main, master]
-    paths:
-      - "**/*.tf"
-      - ".github/workflows/**"
   push:
     branches: [main, master]
     paths:

@@ -14,9 +14,9 @@ provider "aws" {
 }
 
 #trivy:ignore:*
-#checkov:skip=CKV_AWS_144:This validate-only fixture verifies module inputs and does not provision the caller-managed replication destination required for cross-region replication.
-#checkov:skip=CKV2_AWS_62:SES inbound storage does not require native S3 event notifications because the receipt rule invokes Lambda directly.
 module "forwarder" {
+  #checkov:skip=CKV_AWS_144:This validate-only fixture verifies module inputs and does not provision the caller-managed replication destination required for cross-region replication.
+  #checkov:skip=CKV2_AWS_62:SES inbound storage does not require native S3 event notifications because the receipt rule invokes Lambda directly.
   source = "../../../modules/ses-email-forwarder"
 
   domain_name                = "example.com"

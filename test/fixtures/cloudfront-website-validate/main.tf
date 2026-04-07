@@ -14,11 +14,11 @@ provider "aws" {
 }
 
 #trivy:ignore:*
-#checkov:skip=CKV_AWS_310:This validate-only fixture exercises a module that manages a single website origin plus an optional API origin; redundant origin failover must be caller-designed.
-#checkov:skip=CKV2_AWS_47:This fixture supplies a caller-managed WAF Web ACL identifier; AMR enforcement belongs to that external WAF policy, not the module wiring test.
-#checkov:skip=CKV_AWS_144:This validate-only fixture does not provision a caller-managed replication destination bucket; CRR is intentionally outside fixture scope.
-#checkov:skip=CKV2_AWS_62:Static website origin buckets in this module do not emit native S3 event notifications by default; integrations are caller-specific.
 module "website" {
+  #checkov:skip=CKV_AWS_310:This validate-only fixture exercises a module that manages a single website origin plus an optional API origin; redundant origin failover must be caller-designed.
+  #checkov:skip=CKV2_AWS_47:This fixture supplies a caller-managed WAF Web ACL identifier; AMR enforcement belongs to that external WAF policy, not the module wiring test.
+  #checkov:skip=CKV_AWS_144:This validate-only fixture does not provision a caller-managed replication destination bucket; CRR is intentionally outside fixture scope.
+  #checkov:skip=CKV2_AWS_62:Static website origin buckets in this module do not emit native S3 event notifications by default; integrations are caller-specific.
   source = "../../../modules/cloudfront-website"
 
   bucket_name                               = "validate-example-static-site-bucket"

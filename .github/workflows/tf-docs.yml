@@ -10,9 +10,6 @@ on:
   merge_group:
     types: [checks_requested]
     branches: [main]
-    paths:
-      - "modules/**"
-      - ".github/workflows/tf-docs.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

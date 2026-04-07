@@ -21,10 +21,10 @@ locals {
 }
 
 #trivy:ignore:*
-#checkov:skip=CKV_AWS_144:This ephemeral Terratest fixture uses a single temporary bucket and does not provision the caller-managed replication destination required for CRR.
-#checkov:skip=CKV2_AWS_62:CloudTrail delivers logs directly to S3 and does not require bucket event notifications for this fixture.
-#checkov:skip=CKV_AWS_18:This ephemeral fixture bucket does not emit access logs because that would require a second dedicated logging bucket just for the test harness.
 resource "aws_s3_bucket" "trail" {
+  #checkov:skip=CKV_AWS_144:This ephemeral Terratest fixture uses a single temporary bucket and does not provision the caller-managed replication destination required for CRR.
+  #checkov:skip=CKV2_AWS_62:CloudTrail delivers logs directly to S3 and does not require bucket event notifications for this fixture.
+  #checkov:skip=CKV_AWS_18:This ephemeral fixture bucket does not emit access logs because that would require a second dedicated logging bucket just for the test harness.
   bucket        = var.bucket_name
   force_destroy = true
   tags          = var.tags
@@ -112,10 +112,10 @@ resource "aws_s3_bucket_policy" "trail" {
 }
 
 #trivy:ignore:*
-#checkov:skip=CKV_AWS_356:KMS key policies are attached to the key itself and must use '*' resources by AWS design.
-#checkov:skip=CKV_AWS_111:This test fixture key policy is constrained by principals and is required for CloudTrail service access.
-#checkov:skip=CKV_AWS_109:KMS key policies require wildcard resources on the key policy document; permissions are constrained by principals and usage context.
 data "aws_iam_policy_document" "trail_kms" {
+  #checkov:skip=CKV_AWS_356:KMS key policies are attached to the key itself and must use '*' resources by AWS design.
+  #checkov:skip=CKV_AWS_111:This test fixture key policy is constrained by principals and is required for CloudTrail service access.
+  #checkov:skip=CKV_AWS_109:KMS key policies require wildcard resources on the key policy document; permissions are constrained by principals and usage context.
   statement {
     sid       = "EnableRootPermissions"
     effect    = "Allow"
@@ -156,8 +156,8 @@ resource "aws_kms_key" "trail" {
 }
 
 #trivy:ignore:*
-#checkov:skip=CKV_AWS_67:This Terratest fixture intentionally sets a single-region trail to keep AWS cost and test blast radius low while still exercising the module.
 module "cloudtrail" {
+  #checkov:skip=CKV_AWS_67:This Terratest fixture intentionally sets a single-region trail to keep AWS cost and test blast radius low while still exercising the module.
   source = "../../../modules/cloudtrail"
 
   name                  = var.trail_name
