@@ -71,11 +71,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
-      # Install Trivy safely (no pipes, no broken actions)
+      # Install Trivy safely
       - name: Install Trivy
         run: |
           set -euo pipefail
-          TRIVY_VERSION="0.51.0"
+          TRIVY_VERSION="0.50.2"
 
           wget https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
           tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
@@ -83,7 +83,7 @@ jobs:
 
           trivy --version
 
-      # Run scan and PRINT findings
+      # Show findings
       - name: Trivy config scan (table)
         id: trivy_scan
         continue-on-error: true
@@ -93,7 +93,7 @@ jobs:
             --format table \
             --exit-code 1
 
-      # Generate SARIF for GitHub Security tab
+      # Generate SARIF
       - name: Trivy config scan (SARIF)
         run: |
           trivy config . \
