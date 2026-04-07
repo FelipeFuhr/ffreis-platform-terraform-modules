@@ -10,6 +10,8 @@ locals {
   # the origin except Host, which CloudFront replaces with the origin domain
   origin_request_policy_all_except_host = "b689b0a8-53d0-40ab-baf2-68738e2966ac"
 
+  managed_security_headers_policy_name = "Managed-SecurityHeadersPolicy"
+
   # Strip the https:// scheme to get the plain hostname CloudFront needs
   api_domain = var.api_gateway_url != null ? replace(var.api_gateway_url, "https://", "") : ""
 
@@ -20,6 +22,13 @@ locals {
 # ---------------------------------------------------------------------------
 # S3 bucket (private — CloudFront is the only reader via OAC)
 # ---------------------------------------------------------------------------
+
+data "aws_cloudfront_response_headers_policy" "security_headers" {
+  name = local.managed_security_headers_policy_name
+}
+#checkov:skip=CKV_AWS_144:Cross-region replication requires a caller-managed destination bucket and provider configuration.
+#checkov:skip=CKV2_AWS_62:Static website buckets do not emit native event notifications by default; integrations are caller-specific.
+#checkov:skip=CKV_AWS_18:Access logging requires a separate central log bucket supplied by the calling stack.
 resource "aws_s3_bucket" "website" {
   bucket        = var.bucket_name
   force_destroy = false
@@ -38,7 +47,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "website" {
   bucket = aws_s3_bucket.website.id
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm = "aws:kms"
     }
   }
 }
@@ -49,6 +58,25 @@ resource "aws_s3_bucket_public_access_block" "website" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "website" {
+  bucket = aws_s3_bucket.website.id
+
+  rule {
+    id     = "website-hygiene"
+    status = "Enabled"
+
+    filter {}
+
+    noncurrent_version_expiration {
+      noncurrent_days = 90
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 1
+    }
+  }
 }
 
 # ---------------------------------------------------------------------------
@@ -65,6 +93,11 @@ resource "aws_cloudfront_origin_access_control" "website" {
 # ---------------------------------------------------------------------------
 # CloudFront distribution
 # ---------------------------------------------------------------------------
+#checkov:skip=CKV_AWS_68:WAF attachment is caller-specific and depends on a separately managed Web ACL.
+#checkov:skip=CKV_AWS_310:Origin failover only applies when the caller provides redundant origins; this module manages a single website origin plus an optional API origin.
+#checkov:skip=CKV_AWS_86:CloudFront access logging requires a separate log bucket that is owned by the calling stack.
+#checkov:skip=CKV2_AWS_32:All cache behaviors attach the AWS managed Security Headers response policy; some scanner versions do not resolve the data source reference.
+#checkov:skip=CKV2_AWS_47:Log4j AMR enforcement is part of the caller-managed WAF policy, not this distribution module.
 resource "aws_cloudfront_distribution" "website" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -96,26 +129,28 @@ resource "aws_cloudfront_distribution" "website" {
 
   # Default behaviour — serve static files from S3
   default_cache_behavior {
-    target_origin_id       = "S3-${var.bucket_name}"
-    viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
-    cached_methods         = ["GET", "HEAD"]
-    cache_policy_id        = local.cache_policy_optimized
-    compress               = true
+    target_origin_id           = "S3-${var.bucket_name}"
+    viewer_protocol_policy     = "redirect-to-https"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    cache_policy_id            = local.cache_policy_optimized
+    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.security_headers.id
+    compress                   = true
   }
 
   # API path behaviours — forward POST/etc to API Gateway without caching
   dynamic "ordered_cache_behavior" {
     for_each = local.has_api ? var.api_path_patterns : []
     content {
-      path_pattern             = ordered_cache_behavior.value
-      target_origin_id         = "APIGW"
-      viewer_protocol_policy   = "https-only"
-      allowed_methods          = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-      cached_methods           = ["GET", "HEAD"]
-      cache_policy_id          = local.cache_policy_disabled
-      origin_request_policy_id = local.origin_request_policy_all_except_host
-      compress                 = false
+      path_pattern               = ordered_cache_behavior.value
+      target_origin_id           = "APIGW"
+      viewer_protocol_policy     = "https-only"
+      allowed_methods            = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+      cached_methods             = ["GET", "HEAD"]
+      cache_policy_id            = local.cache_policy_disabled
+      origin_request_policy_id   = local.origin_request_policy_all_except_host
+      response_headers_policy_id = data.aws_cloudfront_response_headers_policy.security_headers.id
+      compress                   = false
     }
   }
 

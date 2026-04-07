@@ -46,7 +46,12 @@ variable "rule_set_name" {
 variable "log_retention_days" {
   description = "CloudWatch log retention for the forwarder Lambda."
   type        = number
-  default     = 30
+  default     = 365
+
+  validation {
+    condition     = var.log_retention_days >= 365
+    error_message = "log_retention_days must be at least 365 days to satisfy log retention requirements."
+  }
 }
 
 variable "tags" {

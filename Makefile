@@ -55,12 +55,12 @@ fmt-check:
 
 ## validate: init and validate all modules (no backend required)
 validate:
-	@set -euo pipefail; \
+	@bash -euo pipefail -c ' \
 	find modules -mindepth 1 -maxdepth 1 -type d | sort | while read -r dir; do \
 	  echo "── Validating $$dir ──"; \
 	  terraform -chdir="$$dir" init -backend=false -input=false; \
 	  terraform -chdir="$$dir" validate; \
-	done
+	done'
 
 ## lint: run tflint across all modules
 lint:

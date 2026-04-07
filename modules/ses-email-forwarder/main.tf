@@ -4,6 +4,9 @@ data "aws_caller_identity" "current" {}
 # ---------------------------------------------------------------------------
 # S3 bucket — stores raw inbound emails for Lambda to read
 # ---------------------------------------------------------------------------
+#checkov:skip=CKV_AWS_144:Cross-region replication requires a caller-managed destination bucket and replication IAM configuration.
+#checkov:skip=CKV2_AWS_62:This bucket stores inbound SES objects and does not require native event notifications because the SES receipt rule invokes Lambda directly.
+#checkov:skip=CKV_AWS_18:Access logging requires a separate central log bucket supplied by the calling stack.
 resource "aws_s3_bucket" "emails" {
   bucket = var.email_bucket_name
 
@@ -19,7 +22,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "emails" {
   bucket = aws_s3_bucket.emails.id
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm = "aws:kms"
     }
   }
 }
@@ -46,9 +49,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "emails" {
 data "aws_iam_policy_document" "emails_bucket_policy" {
   # SES inbound must be able to PutObject to store raw emails
   statement {
-    sid     = "AllowSESPuts"
-    effect  = "Allow"
-    actions = ["s3:PutObject"]
+    sid       = "AllowSESPuts"
+    effect    = "Allow"
+    actions   = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.emails.arn}/*"]
 
     principals {
@@ -93,9 +96,9 @@ data "aws_iam_policy_document" "lambda_assume" {
 
 data "aws_iam_policy_document" "lambda_policy" {
   statement {
-    sid    = "ReadEmailsFromS3"
-    effect = "Allow"
-    actions = ["s3:GetObject"]
+    sid       = "ReadEmailsFromS3"
+    effect    = "Allow"
+    actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.emails.arn}/${var.email_key_prefix}/*"]
   }
 
@@ -133,6 +136,7 @@ resource "aws_iam_role_policy" "forwarder" {
   policy = data.aws_iam_policy_document.lambda_policy.json
 }
 
+#checkov:skip=CKV_AWS_158:Customer-managed KMS for log groups is caller-specific; CloudWatch Logs remain encrypted at rest with the AWS-managed service key.
 resource "aws_cloudwatch_log_group" "forwarder" {
   name              = "/aws/lambda/${replace(var.domain_name, ".", "-")}-email-forwarder"
   retention_in_days = var.log_retention_days
@@ -144,6 +148,8 @@ resource "aws_lambda_function" "forwarder" {
   #checkov:skip=CKV_AWS_116:DLQ not required; failures are logged and the SES rule retries.
   #checkov:skip=CKV_AWS_272:Code signing not enforced for internal tooling Lambdas.
   #checkov:skip=CKV_AWS_50:X-Ray tracing optional for email forwarder; CloudWatch logs provide sufficient observability.
+  #checkov:skip=CKV_AWS_117:This Lambda intentionally runs outside a VPC so it can reach public SES and S3 endpoints without NAT dependencies.
+  #checkov:skip=CKV_AWS_173:Environment values are routing metadata, not secrets; a customer-managed KMS key is intentionally not required by default.
 
   function_name    = "${replace(var.domain_name, ".", "-")}-email-forwarder"
   role             = aws_iam_role.forwarder.arn
@@ -169,10 +175,10 @@ resource "aws_lambda_function" "forwarder" {
 }
 
 resource "aws_lambda_permission" "ses" {
-  statement_id  = "AllowSESInvoke"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.forwarder.function_name
-  principal     = "ses.amazonaws.com"
+  statement_id   = "AllowSESInvoke"
+  action         = "lambda:InvokeFunction"
+  function_name  = aws_lambda_function.forwarder.function_name
+  principal      = "ses.amazonaws.com"
   source_account = data.aws_caller_identity.current.account_id
 }
 
@@ -191,9 +197,9 @@ resource "aws_ses_receipt_rule" "forward" {
   name          = "${replace(var.domain_name, ".", "-")}-forward"
   rule_set_name = aws_ses_receipt_rule_set.this.rule_set_name
   # Empty recipients list matches all addresses for the verified domain
-  recipients    = [var.domain_name]
-  enabled       = true
-  scan_enabled  = true
+  recipients   = [var.domain_name]
+  enabled      = true
+  scan_enabled = true
 
   # Action 1: store raw email in S3
   s3_action {

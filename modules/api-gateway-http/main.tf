@@ -48,6 +48,7 @@ resource "aws_apigatewayv2_integration" "this" {
   timeout_milliseconds   = each.value.timeout_milliseconds
 }
 
+#checkov:skip=CKV_AWS_309:This module intentionally supports public routes by setting authorization_type = "NONE" when no JWT authorizer is configured.
 resource "aws_apigatewayv2_route" "this" {
   for_each = var.routes
 
