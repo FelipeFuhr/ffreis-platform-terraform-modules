@@ -58,7 +58,7 @@ jobs:
     needs: [fmt]
     uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-lint.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
 
-  # ── 5. Security (Trivy FIXED PROPERLY) ──────────────────────────────────────
+  # ── 5. Security (Trivy FINAL FIX) ───────────────────────────────────────────
   security:
     needs: [fmt]
     name: Security (Trivy)
@@ -71,11 +71,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
-      # ✅ Proper install (no broken tar / wget piping)
-      - name: Setup Trivy
-        uses: aquasecurity/setup-trivy@v0.3.0
+      # Install Trivy safely (no pipes, no broken actions)
+      - name: Install Trivy
+        run: |
+          set -euo pipefail
+          TRIVY_VERSION="0.51.0"
 
-      # Step 1: Show findings (ALWAYS prints)
+          wget https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
+          tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
+          sudo mv trivy /usr/local/bin/
+
+          trivy --version
+
+      # Run scan and PRINT findings
       - name: Trivy config scan (table)
         id: trivy_scan
         continue-on-error: true
@@ -85,7 +93,7 @@ jobs:
             --format table \
             --exit-code 1
 
-      # Step 2: Generate SARIF (no fail)
+      # Generate SARIF for GitHub Security tab
       - name: Trivy config scan (SARIF)
         run: |
           trivy config . \
@@ -99,7 +107,7 @@ jobs:
         with:
           sarif_file: trivy.sarif
 
-      # Step 3: Fail cleanly AFTER printing results
+      # Fail AFTER showing findings
       - name: Fail if Trivy found issues
         if: steps.trivy_scan.outcome == 'failure'
         run: |

@@ -80,7 +80,7 @@ variable "acm_certificate_arn" {
   default     = null
 
   validation {
-    condition     = length(var.domain_names) == 0 || trimspace(coalesce(var.acm_certificate_arn, "")) != ""
+    condition     = length(var.domain_names) == 0 || try(trimspace(var.acm_certificate_arn), "") != ""
     error_message = "acm_certificate_arn must be provided and non-empty when domain_names is non-empty."
   }
 }
