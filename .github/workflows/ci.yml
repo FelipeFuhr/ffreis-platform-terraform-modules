@@ -73,7 +73,7 @@ jobs:
 
       # ✅ Proper install (no broken tar / wget piping)
       - name: Setup Trivy
-        uses: aquasecurity/setup-trivy@v0.2.0
+        uses: aquasecurity/setup-trivy@v0.3.0
 
       # Step 1: Show findings (ALWAYS prints)
       - name: Trivy config scan (table)
