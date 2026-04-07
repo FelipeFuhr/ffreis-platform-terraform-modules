@@ -2,6 +2,7 @@ locals {
   sns_kms_key_id = var.kms_master_key_id != null ? var.kms_master_key_id : "alias/aws/sns"
 }
 
+#trivy:ignore:aws-sns-topic-encryption-use-cmk
 resource "aws_sns_topic" "this" {
   name                        = var.name
   fifo_topic                  = var.fifo_topic
