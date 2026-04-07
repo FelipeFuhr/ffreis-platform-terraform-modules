@@ -25,7 +25,7 @@ func TestKMSKeyModule(t *testing.T) {
 	region := testRegion()
 	alias := resourceName(random.UniqueId())
 
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: "../modules/kms-key",
 		Vars: map[string]interface{}{
 			"description": "Terratest ephemeral key — safe to delete",

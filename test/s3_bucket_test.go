@@ -26,7 +26,7 @@ func TestS3BucketModule(t *testing.T) {
 	region := testRegion()
 	bucketName := resourceName(random.UniqueId())
 
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: "../modules/s3-bucket",
 		Vars: map[string]interface{}{
 			"bucket":             bucketName,

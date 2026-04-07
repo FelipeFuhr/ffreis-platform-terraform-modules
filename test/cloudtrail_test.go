@@ -27,7 +27,7 @@ func TestCloudTrailModule(t *testing.T) {
 	bucketName := fmt.Sprintf("%s-cloudtrail", resourceName(random.UniqueId()))
 	fixtureDir := test_structure.CopyTerraformFolderToTemp(t, "..", filepath.Join("test", "fixtures", "cloudtrail"))
 
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: fixtureDir,
 		Vars: map[string]interface{}{
 			"aws_region":  region,

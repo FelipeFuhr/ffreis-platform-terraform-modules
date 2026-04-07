@@ -12,7 +12,7 @@ func TestCloudFrontWebsiteModuleValidate(t *testing.T) {
 	t.Parallel()
 
 	fixtureDir := test_structure.CopyTerraformFolderToTemp(t, "..", filepath.Join("test", "fixtures", "cloudfront-website-validate"))
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: fixtureDir,
 	})
 

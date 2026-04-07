@@ -17,10 +17,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/gruntwork-io/terratest/modules/terraform"
 )
 
 const (
@@ -78,4 +80,29 @@ func resourceName(uniqueID string) string {
 		name = name[:40]
 	}
 	return name
+}
+
+// terraformBinary picks the first supported IaC CLI available in PATH.
+// CI smoke jobs install Terraform, while some local environments prefer OpenTofu.
+func terraformBinary(t *testing.T) string {
+	t.Helper()
+
+	for _, candidate := range []string{"tofu", "terraform"} {
+		if _, err := exec.LookPath(candidate); err == nil {
+			return candidate
+		}
+	}
+
+	t.Fatal("neither 'tofu' nor 'terraform' was found in PATH")
+	return ""
+}
+
+func terraformOptions(t *testing.T, opts *terraform.Options) *terraform.Options {
+	t.Helper()
+
+	if opts == nil {
+		opts = &terraform.Options{}
+	}
+	opts.TerraformBinary = terraformBinary(t)
+	return terraform.WithDefaultRetryableErrors(t, opts)
 }

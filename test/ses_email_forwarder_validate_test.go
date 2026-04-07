@@ -12,7 +12,7 @@ func TestSESEmailForwarderModuleValidate(t *testing.T) {
 	t.Parallel()
 
 	fixtureDir := test_structure.CopyTerraformFolderToTemp(t, "..", filepath.Join("test", "fixtures", "ses-email-forwarder-validate"))
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: fixtureDir,
 	})
 

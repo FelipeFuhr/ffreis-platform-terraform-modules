@@ -26,7 +26,7 @@ func TestECRModule(t *testing.T) {
 	region := testRegion()
 	repositoryName := resourceName(random.UniqueId())
 
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: "../modules/ecr",
 		Vars: map[string]interface{}{
 			"name":                       repositoryName,

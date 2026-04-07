@@ -26,7 +26,7 @@ func TestSQSModule(t *testing.T) {
 	region := testRegion()
 	queueName := resourceName(random.UniqueId())
 
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: "../modules/sqs",
 		Vars: map[string]interface{}{
 			"name":       queueName,

@@ -39,7 +39,7 @@ func TestIAMRoleModule(t *testing.T) {
 	region := testRegion()
 	roleName := resourceName(random.UniqueId())
 
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: "../modules/iam-role",
 		Vars: map[string]interface{}{
 			"name":                  roleName,

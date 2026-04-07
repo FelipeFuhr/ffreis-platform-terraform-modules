@@ -24,7 +24,7 @@ func TestECSClusterModule(t *testing.T) {
 	clusterName := resourceName(random.UniqueId())
 	expectedLogGroupName := fmt.Sprintf("/ecs/exec/%s", clusterName)
 
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: "../modules/ecs-cluster",
 		Vars: map[string]interface{}{
 			"name": clusterName,

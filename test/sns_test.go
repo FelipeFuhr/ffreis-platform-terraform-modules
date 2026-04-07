@@ -25,7 +25,7 @@ func TestSNSModule(t *testing.T) {
 	region := testRegion()
 	topicName := resourceName(random.UniqueId())
 
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: "../modules/sns",
 		Vars: map[string]interface{}{
 			"name":         topicName,
