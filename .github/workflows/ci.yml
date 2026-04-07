@@ -136,7 +136,7 @@ jobs:
           cache-dependency-path: test/go.sum
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@dc1f898b5180fc3f79c8d2d0f0e83fba635f4dd4
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.9.8"
           terraform_wrapper: false
