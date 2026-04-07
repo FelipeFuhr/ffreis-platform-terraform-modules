@@ -58,7 +58,7 @@ jobs:
     needs: [fmt]
     uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-lint.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
 
-  # ── 5. Security (Trivy FIXED) ───────────────────────────────────────────────
+  # ── 5. Security (Trivy FIXED PROPERLY) ──────────────────────────────────────
   security:
     needs: [fmt]
     name: Security (Trivy)
@@ -71,15 +71,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
-      # Install Trivy (avoid buggy GH action behavior)
-      - name: Install Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget
-          wget -qO- https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.51.0_Linux-64bit.tar.gz | tar xz
-          sudo mv trivy /usr/local/bin/
+      # ✅ Proper install (no broken tar / wget piping)
+      - name: Setup Trivy
+        uses: aquasecurity/setup-trivy@v0.2.0
 
-      # Step 1: Show findings (always visible)
+      # Step 1: Show findings (ALWAYS prints)
       - name: Trivy config scan (table)
         id: trivy_scan
         continue-on-error: true
