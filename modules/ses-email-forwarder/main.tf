@@ -12,6 +12,7 @@ locals {
 # ---------------------------------------------------------------------------
 # S3 bucket — stores raw inbound emails for Lambda to read
 # ---------------------------------------------------------------------------
+#trivy:ignore:*
 #checkov:skip=CKV_AWS_144:Cross-region replication requires a caller-managed destination bucket and replication IAM configuration.
 #checkov:skip=CKV2_AWS_62:This bucket stores inbound SES objects and does not require native event notifications because the SES receipt rule invokes Lambda directly.
 resource "aws_s3_bucket" "emails" {

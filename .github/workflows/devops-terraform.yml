@@ -70,6 +70,17 @@ jobs:
         with:
           sarif_file: trivy.sarif
 
+      - name: Trivy findings (table)
+        if: failure()
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "0"
+          format: table
+
   tfsec:
     uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-tfsec.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
     needs: [fmt]

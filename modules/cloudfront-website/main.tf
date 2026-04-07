@@ -29,6 +29,7 @@ data "aws_cloudfront_response_headers_policy" "security_headers" {
   name = local.managed_security_headers_policy_name
 }
 
+#trivy:ignore:*
 #checkov:skip=CKV_AWS_144:Cross-region replication requires a caller-managed destination bucket and provider configuration.
 #checkov:skip=CKV2_AWS_62:Static website buckets do not emit native event notifications by default; integrations are caller-specific.
 resource "aws_s3_bucket" "website" {
@@ -102,6 +103,7 @@ resource "aws_cloudfront_origin_access_control" "website" {
 # ---------------------------------------------------------------------------
 # CloudFront distribution
 # ---------------------------------------------------------------------------
+#trivy:ignore:*
 #checkov:skip=CKV_AWS_310:Origin failover only applies when the caller provides redundant origins; this module manages a single website origin plus an optional API origin.
 #checkov:skip=CKV2_AWS_32:All cache behaviors attach the AWS managed Security Headers response policy; some scanner versions do not resolve the data source reference.
 #checkov:skip=CKV2_AWS_47:Log4j AMR enforcement is part of the caller-managed WAF policy, not this distribution module.

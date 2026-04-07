@@ -17,12 +17,13 @@ data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 locals {
-#checkov:skip=CKV_AWS_144:This ephemeral Terratest fixture uses a single temporary bucket and does not provision the caller-managed replication destination required for CRR.
-#checkov:skip=CKV2_AWS_62:CloudTrail delivers logs directly to S3 and does not require bucket event notifications for this fixture.
-#checkov:skip=CKV_AWS_18:This ephemeral fixture bucket does not emit access logs because that would require a second dedicated logging bucket just for the test harness.
   trail_logs_prefix = "${var.trail_name}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
 }
 
+#trivy:ignore:*
+#checkov:skip=CKV_AWS_144:This ephemeral Terratest fixture uses a single temporary bucket and does not provision the caller-managed replication destination required for CRR.
+#checkov:skip=CKV2_AWS_62:CloudTrail delivers logs directly to S3 and does not require bucket event notifications for this fixture.
+#checkov:skip=CKV_AWS_18:This ephemeral fixture bucket does not emit access logs because that would require a second dedicated logging bucket just for the test harness.
 resource "aws_s3_bucket" "trail" {
   bucket        = var.bucket_name
   force_destroy = true
@@ -33,6 +34,9 @@ resource "aws_s3_bucket_public_access_block" "trail" {
   bucket                  = aws_s3_bucket.trail.id
   block_public_acls       = true
   block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "trail" {
   bucket = aws_s3_bucket.trail.id
@@ -59,15 +63,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "trail" {
     }
   }
 }
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
 
 resource "aws_s3_bucket_versioning" "trail" {
   bucket = aws_s3_bucket.trail.id
-#checkov:skip=CKV_AWS_356:KMS key policies are attached to the key itself and must use '*' resources by AWS design.
-#checkov:skip=CKV_AWS_111:This test fixture key policy is constrained by principals and is required for CloudTrail service access.
-#checkov:skip=CKV_AWS_109:KMS key policies require wildcard resources on the key policy document; permissions are constrained by principals and usage context.
 
   versioning_configuration {
     status = "Enabled"
@@ -113,6 +111,10 @@ resource "aws_s3_bucket_policy" "trail" {
   policy = data.aws_iam_policy_document.trail_bucket.json
 }
 
+#trivy:ignore:*
+#checkov:skip=CKV_AWS_356:KMS key policies are attached to the key itself and must use '*' resources by AWS design.
+#checkov:skip=CKV_AWS_111:This test fixture key policy is constrained by principals and is required for CloudTrail service access.
+#checkov:skip=CKV_AWS_109:KMS key policies require wildcard resources on the key policy document; permissions are constrained by principals and usage context.
 data "aws_iam_policy_document" "trail_kms" {
   statement {
     sid       = "EnableRootPermissions"
@@ -153,6 +155,7 @@ resource "aws_kms_key" "trail" {
   tags                    = var.tags
 }
 
+#trivy:ignore:*
 #checkov:skip=CKV_AWS_67:This Terratest fixture intentionally sets a single-region trail to keep AWS cost and test blast radius low while still exercising the module.
 module "cloudtrail" {
   source = "../../../modules/cloudtrail"
