@@ -30,10 +30,9 @@ locals {
       for rule in local.default_lifecycle_rules : jsondecode(rule)
     ] }) : null
   )
-}
 
-data "aws_caller_identity" "current" {}
-data "aws_partition" "current" {}
+  repository_encryption_type = var.encryption_type != null ? var.encryption_type : (var.kms_key_arn != null ? "KMS" : "AES256")
+}
 
 resource "aws_ecr_repository" "this" {
   name = var.name
@@ -45,69 +44,12 @@ resource "aws_ecr_repository" "this" {
     scan_on_push = var.scan_on_push
   }
 
-  # Checkov CKV_AWS_136: enforce KMS encryption.
   encryption_configuration {
-    encryption_type = var.encryption_type
-    kms_key         = var.kms_key_arn != null ? var.kms_key_arn : aws_kms_key.ecr[0].arn
+    encryption_type = local.repository_encryption_type
+    kms_key         = local.repository_encryption_type == "KMS" ? var.kms_key_arn : null
   }
 
   tags = var.tags
-}
-
-data "aws_iam_policy_document" "ecr_kms_policy" {
-  #checkov:skip=CKV_AWS_356:KMS key policies require '*' as resource; the policy is attached to the key and scoped to it by design.
-  #checkov:skip=CKV_AWS_111:KMS key policies require '*' as resource; the policy is attached to the key and scoped to it by design.
-  #checkov:skip=CKV_AWS_109:KMS key policies require '*' as resource; the policy is attached to the key and scoped to it by design.
-  statement {
-    sid       = "EnableRootPermissions"
-    effect    = "Allow"
-    actions   = ["kms:*"]
-    resources = ["*"]
-
-    principals {
-      type        = "AWS"
-      identifiers = ["arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:root"]
-    }
-  }
-
-  statement {
-    sid    = "AllowECRToUseKey"
-    effect = "Allow"
-    actions = [
-      "kms:Encrypt",
-      "kms:Decrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*",
-      "kms:DescribeKey",
-    ]
-    resources = ["*"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ecr.amazonaws.com"]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:SourceAccount"
-      values   = [data.aws_caller_identity.current.account_id]
-    }
-  }
-}
-
-resource "aws_kms_key" "ecr" {
-  count                   = var.kms_key_arn == null ? 1 : 0
-  description             = "KMS key for ECR repository encryption (${var.name})"
-  deletion_window_in_days = 7
-  enable_key_rotation     = true
-  policy                  = data.aws_iam_policy_document.ecr_kms_policy.json
-  tags                    = var.tags
-}
-
-resource "aws_kms_alias" "ecr" {
-  count         = var.kms_key_arn == null ? 1 : 0
-  name          = "alias/${var.name}-ecr"
-  target_key_id = aws_kms_key.ecr[0].key_id
 }
 
 resource "aws_ecr_lifecycle_policy" "this" {

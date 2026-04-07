@@ -15,8 +15,10 @@ locals {
   # Strip the https:// scheme to get the plain hostname CloudFront needs
   api_domain = var.api_gateway_url != null ? replace(var.api_gateway_url, "https://", "") : ""
 
-  has_custom_domain = length(var.domain_names) > 0
-  has_api           = var.api_gateway_url != null && length(var.api_path_patterns) > 0
+  has_custom_domain      = length(var.domain_names) > 0
+  has_api                = var.api_gateway_url != null && length(var.api_path_patterns) > 0
+  s3_access_logs_prefix  = var.s3_access_logs_prefix != "" ? var.s3_access_logs_prefix : "${var.bucket_name}/s3/"
+  cloudfront_logs_prefix = var.cloudfront_access_logs_prefix != "" ? var.cloudfront_access_logs_prefix : "${var.bucket_name}/cloudfront/"
 }
 
 # ---------------------------------------------------------------------------
@@ -26,9 +28,9 @@ locals {
 data "aws_cloudfront_response_headers_policy" "security_headers" {
   name = local.managed_security_headers_policy_name
 }
+
 #checkov:skip=CKV_AWS_144:Cross-region replication requires a caller-managed destination bucket and provider configuration.
 #checkov:skip=CKV2_AWS_62:Static website buckets do not emit native event notifications by default; integrations are caller-specific.
-#checkov:skip=CKV_AWS_18:Access logging requires a separate central log bucket supplied by the calling stack.
 resource "aws_s3_bucket" "website" {
   bucket        = var.bucket_name
   force_destroy = false
@@ -47,7 +49,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "website" {
   bucket = aws_s3_bucket.website.id
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "aws:kms"
+      kms_master_key_id = var.kms_key_arn
+      sse_algorithm     = "aws:kms"
     }
   }
 }
@@ -79,6 +82,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "website" {
   }
 }
 
+resource "aws_s3_bucket_logging" "website" {
+  bucket        = aws_s3_bucket.website.id
+  target_bucket = var.s3_access_logs_bucket_name
+  target_prefix = local.s3_access_logs_prefix
+}
+
 # ---------------------------------------------------------------------------
 # CloudFront Origin Access Control (OAC) — modern replacement for OAI
 # ---------------------------------------------------------------------------
@@ -93,9 +102,7 @@ resource "aws_cloudfront_origin_access_control" "website" {
 # ---------------------------------------------------------------------------
 # CloudFront distribution
 # ---------------------------------------------------------------------------
-#checkov:skip=CKV_AWS_68:WAF attachment is caller-specific and depends on a separately managed Web ACL.
 #checkov:skip=CKV_AWS_310:Origin failover only applies when the caller provides redundant origins; this module manages a single website origin plus an optional API origin.
-#checkov:skip=CKV_AWS_86:CloudFront access logging requires a separate log bucket that is owned by the calling stack.
 #checkov:skip=CKV2_AWS_32:All cache behaviors attach the AWS managed Security Headers response policy; some scanner versions do not resolve the data source reference.
 #checkov:skip=CKV2_AWS_47:Log4j AMR enforcement is part of the caller-managed WAF policy, not this distribution module.
 resource "aws_cloudfront_distribution" "website" {
@@ -104,6 +111,7 @@ resource "aws_cloudfront_distribution" "website" {
   default_root_object = var.default_root_object
   price_class         = var.price_class
   aliases             = local.has_custom_domain ? var.domain_names : null
+  web_acl_id          = var.waf_web_acl_id
 
   # S3 origin
   origin {
@@ -190,6 +198,12 @@ resource "aws_cloudfront_distribution" "website" {
     cloudfront_default_certificate = !local.has_custom_domain
     ssl_support_method             = local.has_custom_domain ? "sni-only" : null
     minimum_protocol_version       = local.has_custom_domain ? "TLSv1.2_2021" : null
+  }
+
+  logging_config {
+    bucket          = var.cloudfront_access_logs_bucket_domain_name
+    include_cookies = false
+    prefix          = local.cloudfront_logs_prefix
   }
 
   tags = var.tags

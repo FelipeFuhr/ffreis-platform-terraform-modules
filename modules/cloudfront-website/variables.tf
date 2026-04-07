@@ -3,6 +3,54 @@ variable "bucket_name" {
   type        = string
 }
 
+variable "kms_key_arn" {
+  description = "Optional customer-managed KMS key ARN for website bucket encryption. Null uses the AWS-managed S3 KMS key with no fixed monthly CMK cost."
+  type        = string
+  default     = null
+}
+
+variable "s3_access_logs_bucket_name" {
+  description = "Central S3 bucket name that receives access logs for the website bucket."
+  type        = string
+
+  validation {
+    condition     = trimspace(var.s3_access_logs_bucket_name) != ""
+    error_message = "s3_access_logs_bucket_name must be a non-empty bucket name."
+  }
+}
+
+variable "s3_access_logs_prefix" {
+  description = "Prefix for website bucket access logs in the central logging bucket. Empty uses a module default."
+  type        = string
+  default     = ""
+}
+
+variable "cloudfront_access_logs_bucket_domain_name" {
+  description = "S3 bucket domain name that receives CloudFront standard logs, for example logs-bucket.s3.amazonaws.com."
+  type        = string
+
+  validation {
+    condition     = trimspace(var.cloudfront_access_logs_bucket_domain_name) != ""
+    error_message = "cloudfront_access_logs_bucket_domain_name must be a non-empty S3 bucket domain name."
+  }
+}
+
+variable "cloudfront_access_logs_prefix" {
+  description = "Prefix for CloudFront access logs in the logging bucket. Empty uses a module default."
+  type        = string
+  default     = ""
+}
+
+variable "waf_web_acl_id" {
+  description = "WAF Web ACL ID or ARN associated with the CloudFront distribution."
+  type        = string
+
+  validation {
+    condition     = trimspace(var.waf_web_acl_id) != ""
+    error_message = "waf_web_acl_id must be a non-empty Web ACL identifier."
+  }
+}
+
 variable "api_gateway_url" {
   description = "API Gateway HTTP invoke URL (e.g. https://abc.execute-api.us-east-1.amazonaws.com). Required when api_path_patterns is non-empty."
   type        = string

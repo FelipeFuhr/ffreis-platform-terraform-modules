@@ -3,6 +3,28 @@ variable "domain_name" {
   type        = string
 }
 
+variable "email_bucket_kms_key_arn" {
+  description = "Optional customer-managed KMS key ARN for inbound email bucket encryption. Null uses the AWS-managed S3 KMS key with no fixed monthly CMK cost."
+  type        = string
+  default     = null
+}
+
+variable "s3_access_logs_bucket_name" {
+  description = "Central S3 bucket name that receives access logs for the inbound email bucket."
+  type        = string
+
+  validation {
+    condition     = trimspace(var.s3_access_logs_bucket_name) != ""
+    error_message = "s3_access_logs_bucket_name must be a non-empty bucket name."
+  }
+}
+
+variable "s3_access_logs_prefix" {
+  description = "Prefix for inbound email bucket access logs in the central logging bucket. Empty uses a module default."
+  type        = string
+  default     = ""
+}
+
 variable "hosted_zone_id" {
   description = "Route 53 hosted zone ID for the domain. Used to create the MX record pointing to SES inbound."
   type        = string
@@ -63,6 +85,12 @@ variable "log_retention_days" {
     condition     = var.log_retention_days >= 365
     error_message = "log_retention_days must be at least 365 days to satisfy log retention requirements."
   }
+}
+
+variable "log_kms_key_arn" {
+  description = "Optional customer-managed KMS key ARN for the email forwarder CloudWatch log group. Null uses the default CloudWatch Logs encryption with no fixed monthly CMK cost."
+  type        = string
+  default     = null
 }
 
 variable "tags" {

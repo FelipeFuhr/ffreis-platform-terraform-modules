@@ -1,12 +1,19 @@
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
+data "aws_partition" "current" {}
+
+locals {
+  forwarder_name        = "${replace(var.domain_name, ".", "-")}-email-forwarder"
+  receipt_rule_name     = "${replace(var.domain_name, ".", "-")}-forward"
+  s3_access_logs_prefix = var.s3_access_logs_prefix != "" ? var.s3_access_logs_prefix : "${replace(var.domain_name, ".", "-")}/ses-email-forwarder/"
+  ses_receipt_rule_arn  = "arn:${data.aws_partition.current.partition}:ses:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:receipt-rule-set/${aws_ses_receipt_rule_set.this.rule_set_name}:receipt-rule/${local.receipt_rule_name}"
+}
 
 # ---------------------------------------------------------------------------
 # S3 bucket — stores raw inbound emails for Lambda to read
 # ---------------------------------------------------------------------------
 #checkov:skip=CKV_AWS_144:Cross-region replication requires a caller-managed destination bucket and replication IAM configuration.
 #checkov:skip=CKV2_AWS_62:This bucket stores inbound SES objects and does not require native event notifications because the SES receipt rule invokes Lambda directly.
-#checkov:skip=CKV_AWS_18:Access logging requires a separate central log bucket supplied by the calling stack.
 resource "aws_s3_bucket" "emails" {
   bucket = var.email_bucket_name
 
@@ -22,7 +29,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "emails" {
   bucket = aws_s3_bucket.emails.id
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "aws:kms"
+      kms_master_key_id = var.email_bucket_kms_key_arn
+      sse_algorithm     = "aws:kms"
     }
   }
 }
@@ -44,6 +52,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "emails" {
     expiration { days = 7 }
     abort_incomplete_multipart_upload { days_after_initiation = 1 }
   }
+}
+
+resource "aws_s3_bucket_logging" "emails" {
+  bucket        = aws_s3_bucket.emails.id
+  target_bucket = var.s3_access_logs_bucket_name
+  target_prefix = local.s3_access_logs_prefix
 }
 
 data "aws_iam_policy_document" "emails_bucket_policy" {
@@ -109,7 +123,7 @@ data "aws_iam_policy_document" "lambda_policy" {
       "ses:SendEmail",
       "ses:SendRawEmail",
     ]
-    resources = ["arn:aws:ses:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:identity/*"]
+    resources = ["arn:aws:ses:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:identity/*"]
   }
 
   statement {
@@ -120,12 +134,12 @@ data "aws_iam_policy_document" "lambda_policy" {
       "logs:CreateLogStream",
       "logs:PutLogEvents",
     ]
-    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"]
+    resources = ["arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"]
   }
 }
 
 resource "aws_iam_role" "forwarder" {
-  name               = "${replace(var.domain_name, ".", "-")}-email-forwarder"
+  name               = local.forwarder_name
   assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
   tags               = var.tags
 }
@@ -136,10 +150,10 @@ resource "aws_iam_role_policy" "forwarder" {
   policy = data.aws_iam_policy_document.lambda_policy.json
 }
 
-#checkov:skip=CKV_AWS_158:Customer-managed KMS for log groups is caller-specific; CloudWatch Logs remain encrypted at rest with the AWS-managed service key.
 resource "aws_cloudwatch_log_group" "forwarder" {
-  name              = "/aws/lambda/${replace(var.domain_name, ".", "-")}-email-forwarder"
+  name              = "/aws/lambda/${local.forwarder_name}"
   retention_in_days = var.log_retention_days
+  kms_key_id        = var.log_kms_key_arn
   tags              = var.tags
 }
 
@@ -147,11 +161,10 @@ resource "aws_lambda_function" "forwarder" {
   #checkov:skip=CKV_AWS_115:Reserved concurrency not required for low-volume email forwarder.
   #checkov:skip=CKV_AWS_116:DLQ not required; failures are logged and the SES rule retries.
   #checkov:skip=CKV_AWS_272:Code signing not enforced for internal tooling Lambdas.
-  #checkov:skip=CKV_AWS_50:X-Ray tracing optional for email forwarder; CloudWatch logs provide sufficient observability.
   #checkov:skip=CKV_AWS_117:This Lambda intentionally runs outside a VPC so it can reach public SES and S3 endpoints without NAT dependencies.
   #checkov:skip=CKV_AWS_173:Environment values are routing metadata, not secrets; a customer-managed KMS key is intentionally not required by default.
 
-  function_name    = "${replace(var.domain_name, ".", "-")}-email-forwarder"
+  function_name    = local.forwarder_name
   role             = aws_iam_role.forwarder.arn
   runtime          = "python3.12"
   handler          = "forwarder.handler"
@@ -169,6 +182,10 @@ resource "aws_lambda_function" "forwarder" {
     }
   }
 
+  tracing_config {
+    mode = "Active"
+  }
+
   depends_on = [aws_cloudwatch_log_group.forwarder]
 
   tags = var.tags
@@ -179,6 +196,7 @@ resource "aws_lambda_permission" "ses" {
   action         = "lambda:InvokeFunction"
   function_name  = aws_lambda_function.forwarder.function_name
   principal      = "ses.amazonaws.com"
+  source_arn     = local.ses_receipt_rule_arn
   source_account = data.aws_caller_identity.current.account_id
 }
 
@@ -195,7 +213,7 @@ resource "aws_ses_active_receipt_rule_set" "this" {
 }
 
 resource "aws_ses_receipt_rule" "forward" {
-  name          = "${replace(var.domain_name, ".", "-")}-forward"
+  name          = local.receipt_rule_name
   rule_set_name = aws_ses_receipt_rule_set.this.rule_set_name
   # Match email recipients for the configured verified domain
   recipients   = [var.domain_name]
@@ -230,5 +248,5 @@ resource "aws_route53_record" "mx" {
   name    = var.domain_name
   type    = "MX"
   ttl     = 600
-  records = ["10 inbound-smtp.${data.aws_region.current.name}.amazonaws.com"]
+  records = ["10 inbound-smtp.${data.aws_region.current.region}.amazonaws.com"]
 }

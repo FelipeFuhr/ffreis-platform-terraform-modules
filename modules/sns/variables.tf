@@ -22,7 +22,7 @@ variable "display_name" {
 }
 
 variable "kms_master_key_id" {
-  description = "KMS key ARN/alias for SSE. null = create a customer-managed key."
+  description = "Optional customer-managed KMS key ARN/alias for SSE. Null uses the AWS-managed SNS key with no fixed monthly CMK cost."
   type        = string
   default     = null
 }

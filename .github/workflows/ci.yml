@@ -8,7 +8,8 @@ name: CI
 #                ├─→ lint
 #                ├─→ security   (trivy)
 #                ├─→ tfsec
-#                └─→ test-tidy  (Go test module hygiene)
+#                ├─→ test-tidy  (Go test module hygiene)
+#                └─→ terratest  (compile + run; skips gracefully without AWS creds)
 #
 # Any failure blocks all downstream jobs.
 
@@ -120,3 +121,25 @@ jobs:
     uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-test-tidy.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
     with:
       go-version: "1.25.8"
+
+  # ── 7. Terratest smoke run ──────────────────────────────────────────────────
+  terratest:
+    needs: [fmt]
+    name: Terratest
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+
+      - name: Setup Go
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34
+        with:
+          go-version: "1.25.8"
+          cache-dependency-path: test/go.sum
+
+      - name: Download Go test dependencies
+        run: cd test && go mod download
+
+      - name: Run Terratest suite
+        run: make test-ci

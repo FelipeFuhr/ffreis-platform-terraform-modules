@@ -1,0 +1,20 @@
+package test
+
+import (
+	"path/filepath"
+	"testing"
+
+	"github.com/gruntwork-io/terratest/modules/terraform"
+	test_structure "github.com/gruntwork-io/terratest/modules/test-structure"
+)
+
+func TestSESEmailForwarderModuleValidate(t *testing.T) {
+	t.Parallel()
+
+	fixtureDir := test_structure.CopyTerraformFolderToTemp(t, "..", filepath.Join("test", "fixtures", "ses-email-forwarder-validate"))
+	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+		TerraformDir: fixtureDir,
+	})
+
+	terraform.InitAndValidate(t, terraformOptions)
+}
