@@ -107,7 +107,7 @@ resource "aws_cloudfront_origin_access_control" "website" {
 #checkov:skip=CKV_AWS_310:Origin failover only applies when the caller provides redundant origins; this module manages a single website origin plus an optional API origin.
 #checkov:skip=CKV2_AWS_32:All cache behaviors attach the AWS managed Security Headers response policy; some scanner versions do not resolve the data source reference.
 #checkov:skip=CKV2_AWS_47:Log4j AMR enforcement is part of the caller-managed WAF policy, not this distribution module.
-resource "aws_cloudfront_distribution" "website" {
+resource "aws_cloudfront_distribution" "website" { # nosemgrep: terraform.aws.security.aws-cloudfront-insecure-tls.aws-insecure-cloudfront-distribution-tls-version
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = var.default_root_object
@@ -199,7 +199,9 @@ resource "aws_cloudfront_distribution" "website" {
     acm_certificate_arn            = local.has_custom_domain ? var.acm_certificate_arn : null
     cloudfront_default_certificate = !local.has_custom_domain
     ssl_support_method             = local.has_custom_domain ? "sni-only" : null
-    minimum_protocol_version       = local.has_custom_domain ? "TLSv1.2_2021" : null
+    # AWS only allows TLSv1 when using the CloudFront default certificate. Custom
+    # domains must provide ACM so the module can enforce a modern policy.
+    minimum_protocol_version = local.has_custom_domain ? "TLSv1.2_2021" : "TLSv1"
   }
 
   logging_config {

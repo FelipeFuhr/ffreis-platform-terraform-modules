@@ -69,7 +69,7 @@ variable "api_path_patterns" {
 }
 
 variable "domain_names" {
-  description = "Custom domain names (aliases) for the CloudFront distribution. Leave empty to use the CloudFront default domain."
+  description = "Custom domain names (aliases) for the CloudFront distribution. Leave empty to use the CloudFront default domain, which AWS restricts to the legacy TLSv1 viewer policy."
   type        = list(string)
   default     = []
 }
