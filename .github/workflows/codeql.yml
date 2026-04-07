@@ -2,6 +2,9 @@ name: Code Scanning (CodeQL)
 
 on:
   pull_request:
+  merge_group:
+    types: [checks_requested]
+    branches: [main, master]
   push:
     branches: [main, master]
   schedule:

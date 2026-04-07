@@ -50,7 +50,7 @@ variable "cloudwatch_logs_kms_key_arn" {
 }
 
 variable "sns_kms_key_arn" {
-  description = "KMS key ARN for encrypting the CloudTrail SNS topic. null = create a key."
+  description = "Optional customer-managed KMS key ARN for encrypting the CloudTrail SNS topic. Null uses the AWS-managed SNS key with no fixed monthly CMK cost."
   type        = string
   default     = null
 }

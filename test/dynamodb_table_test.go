@@ -26,7 +26,7 @@ func TestDynamoDBTableModule(t *testing.T) {
 	region := testRegion()
 	tableName := resourceName(random.UniqueId())
 
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: "../modules/dynamodb-table",
 		Vars: map[string]interface{}{
 			"name":         tableName,

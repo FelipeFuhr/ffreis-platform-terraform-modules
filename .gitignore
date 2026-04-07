@@ -44,6 +44,9 @@ terraform.rc
 # Plan files
 *.tfplan
 
+# Build artifacts
+*.zip
+
 # macOS
 .DS_Store
 

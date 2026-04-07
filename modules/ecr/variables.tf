@@ -10,18 +10,23 @@ variable "scan_on_push" {
 }
 
 variable "encryption_type" {
-  description = "Encryption type for the repository. Must be 'KMS' to satisfy compliance checks."
+  description = "Optional encryption type for the repository. Null defaults to 'AES256' for zero fixed cost unless kms_key_arn is set, in which case 'KMS' is used."
   type        = string
-  default     = "KMS"
+  default     = null
 
   validation {
-    condition     = var.encryption_type == "KMS"
-    error_message = "encryption_type must be 'KMS'."
+    condition     = var.encryption_type == null || contains(["AES256", "KMS"], var.encryption_type)
+    error_message = "encryption_type must be null, 'AES256', or 'KMS'."
+  }
+
+  validation {
+    condition     = var.kms_key_arn == null || var.encryption_type == null || var.encryption_type == "KMS"
+    error_message = "When kms_key_arn is set, encryption_type must be null or 'KMS'."
   }
 }
 
 variable "kms_key_arn" {
-  description = "KMS key ARN for KMS encryption. Required when encryption_type = 'KMS'."
+  description = "Optional customer-managed KMS key ARN for repository encryption. Null keeps the default zero-fixed-cost encryption mode."
   type        = string
   default     = null
 }

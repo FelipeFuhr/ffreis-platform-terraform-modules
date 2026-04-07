@@ -2,6 +2,9 @@ name: DevOps / Security
 
 on:
   pull_request:
+  merge_group:
+    types: [checks_requested]
+    branches: [main, master]
   push:
     branches: [main, master]
   schedule:
@@ -20,61 +23,21 @@ jobs:
       contents: read
       actions: read
       security-events: write
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-        with:
-          fetch-depth: 0
+    uses: FelipeFuhr/ffreis-workflows-general/.github/workflows/general-gitleaks.yml@c3e3e0a44d4b79697f1babaa9bf287d1b264da52
+    with:
+      working-directory: "."
+      scan-history: true
+      upload-sarif: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
 
-      - name: Gitleaks scan
-        id: gitleaks
-        uses: gacts/gitleaks@9d471d3bda7ee95b6fa416fdfe7e87cf393554d5
-        with:
-          version: 8.24.3
-          config-path: .gitleaks.toml
-          path: .
-          github-token: ${{ github.token }}
-
-  trivy-fs:
-    name: Trivy (Terraform config)
-    runs-on: ubuntu-latest
+  # TODO: update SHA to the ffreis-workflows-terraform commit that added SARIF support to tf-security.yml
+  trivy-config:
     permissions:
       contents: read
       security-events: write
-
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-        with:
-          fetch-depth: 0
-
-      - name: Trivy config scan (SARIF)
-        id: trivy
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
-        with:
-          scan-type: config
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: "1"
-          format: sarif
-          output: trivy.sarif
-
-      - name: Upload Trivy SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@d4b3ca9fa7f69d38bfcd667bdc45bc373d16277e
-        with:
-          sarif_file: trivy.sarif
-
-      - name: Trivy findings (table)
-        if: failure()
-        continue-on-error: true
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
-        with:
-          scan-type: config
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: "0"
-          format: table
+    uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-security.yml@b9644b0bafb7fd4eb3d74ccb8b8ee8818e111079
+    with:
+      scan-ref: "."
+      upload-sarif: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false }}
 
   grype-fs:
     permissions:

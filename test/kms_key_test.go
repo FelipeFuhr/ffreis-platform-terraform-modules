@@ -25,7 +25,7 @@ func TestKMSKeyModule(t *testing.T) {
 	region := testRegion()
 	alias := resourceName(random.UniqueId())
 
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: "../modules/kms-key",
 		Vars: map[string]interface{}{
 			"description": "Terratest ephemeral key — safe to delete",
@@ -47,9 +47,9 @@ func TestKMSKeyModule(t *testing.T) {
 
 	// ── Output validation ────────────────────────────────────────────────────
 
-	keyID     := terraform.Output(t, terraformOptions, "key_id")
-	keyARN    := terraform.Output(t, terraformOptions, "key_arn")
-	aliasARN  := terraform.Output(t, terraformOptions, "alias_arn")
+	keyID := terraform.Output(t, terraformOptions, "key_id")
+	keyARN := terraform.Output(t, terraformOptions, "key_arn")
+	aliasARN := terraform.Output(t, terraformOptions, "alias_arn")
 	aliasName := terraform.Output(t, terraformOptions, "alias_name")
 
 	assert.NotEmpty(t, keyID)

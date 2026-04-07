@@ -29,7 +29,7 @@ variable "default_capacity_provider_strategy" {
 }
 
 variable "execute_command_kms_key_arn" {
-  description = "KMS key ARN for encrypting ECS Exec session data and audit logs."
+  description = "Optional customer-managed KMS key ARN for encrypting ECS Exec session data and audit logs. Null uses the default AWS-managed encryption path with no fixed monthly CMK cost."
   type        = string
   default     = null
 }

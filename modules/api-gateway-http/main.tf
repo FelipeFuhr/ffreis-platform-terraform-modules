@@ -48,6 +48,7 @@ resource "aws_apigatewayv2_integration" "this" {
   timeout_milliseconds   = each.value.timeout_milliseconds
 }
 
+#checkov:skip=CKV_AWS_309:This module supports public routes when authorizer is explicitly set to "none"; all other routes default to AWS_IAM.
 resource "aws_apigatewayv2_route" "this" {
   for_each = var.routes
 
@@ -55,9 +56,7 @@ resource "aws_apigatewayv2_route" "this" {
   route_key = each.key
   target    = "integrations/${aws_apigatewayv2_integration.this[each.key].id}"
 
-  # Checkov CKV_AWS_309 requires an authorization type on routes. This module
-  # defaults to AWS_IAM for non-JWT routes to avoid unauthenticated routes.
-  authorization_type   = each.value.authorizer == "jwt" ? "JWT" : "AWS_IAM"
+  authorization_type   = each.value.authorizer == "jwt" ? "JWT" : (each.value.authorizer == "none" ? "NONE" : "AWS_IAM")
   authorizer_id        = each.value.authorizer == "jwt" && var.jwt_authorizer != null ? aws_apigatewayv2_authorizer.jwt[0].id : null
   authorization_scopes = each.value.authorizer == "jwt" ? each.value.authorization_scopes : null
 }

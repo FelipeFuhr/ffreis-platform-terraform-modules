@@ -2,6 +2,7 @@ locals {
   create_role  = var.execution_role_arn == null
   role_arn     = local.create_role ? aws_iam_role.lambda[0].arn : var.execution_role_arn
   package_type = var.image_uri != null ? local.lambda_package_type_image : local.lambda_package_type_zip
+  use_s3       = var.s3_bucket != null && var.s3_key != null
 
   lambda_package_type_image = "Image"
   lambda_package_type_zip   = "Zip"
@@ -83,11 +84,14 @@ resource "aws_lambda_function" "this" {
   package_type  = local.package_type
   architectures = var.architectures
 
-  # Zip deployment
-  filename         = local.package_type == local.lambda_package_type_zip ? var.filename : null
-  source_code_hash = local.package_type == local.lambda_package_type_zip ? var.source_code_hash : null
-  handler          = local.package_type == local.lambda_package_type_zip ? var.handler : null
-  runtime          = local.package_type == local.lambda_package_type_zip ? var.runtime : null
+  # Zip deployment (local file or S3)
+  filename          = local.package_type == local.lambda_package_type_zip && !local.use_s3 ? var.filename : null
+  s3_bucket         = local.package_type == local.lambda_package_type_zip && local.use_s3 ? var.s3_bucket : null
+  s3_key            = local.package_type == local.lambda_package_type_zip && local.use_s3 ? var.s3_key : null
+  s3_object_version = local.package_type == local.lambda_package_type_zip && local.use_s3 ? var.s3_object_version : null
+  source_code_hash  = local.package_type == local.lambda_package_type_zip ? var.source_code_hash : null
+  handler           = local.package_type == local.lambda_package_type_zip ? var.handler : null
+  runtime           = local.package_type == local.lambda_package_type_zip ? var.runtime : null
 
   # Container image deployment
   image_uri = local.package_type == local.lambda_package_type_image ? var.image_uri : null
@@ -123,6 +127,25 @@ resource "aws_lambda_function" "this" {
 
   # Ensure the log group exists before the function (avoid race on first deploy).
   depends_on = [aws_cloudwatch_log_group.lambda]
+
+  lifecycle {
+    precondition {
+      condition     = (var.s3_bucket == null) == (var.s3_key == null)
+      error_message = "s3_bucket and s3_key must be provided together or both left null."
+    }
+    precondition {
+      condition     = var.image_uri != null || var.filename != null || var.s3_bucket != null
+      error_message = "When image_uri is null, either filename or both s3_bucket and s3_key must be provided."
+    }
+    precondition {
+      condition     = var.image_uri == null || (var.filename == null && var.s3_bucket == null)
+      error_message = "image_uri is mutually exclusive with filename and s3_bucket/s3_key."
+    }
+    precondition {
+      condition     = var.filename == null || var.s3_bucket == null
+      error_message = "filename is mutually exclusive with s3_bucket/s3_key."
+    }
+  }
 
   tags = var.tags
 }

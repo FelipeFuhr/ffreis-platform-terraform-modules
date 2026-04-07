@@ -39,14 +39,14 @@ func TestIAMRoleModule(t *testing.T) {
 	region := testRegion()
 	roleName := resourceName(random.UniqueId())
 
-	terraformOptions := terraform.WithDefaultRetryableErrors(t, &terraform.Options{
+	terraformOptions := terraformOptions(t, &terraform.Options{
 		TerraformDir: "../modules/iam-role",
 		Vars: map[string]interface{}{
-			"name":                 roleName,
-			"assume_role_policy":   ec2TrustPolicy,
+			"name":                  roleName,
+			"assume_role_policy":    ec2TrustPolicy,
 			"force_detach_policies": true, // required: detach any auto-attached policies before destroy
-			"description":          "Terratest ephemeral role — safe to delete",
-			"tags":                 testTags(),
+			"description":           "Terratest ephemeral role — safe to delete",
+			"tags":                  testTags(),
 		},
 		EnvVars: map[string]string{
 			"AWS_DEFAULT_REGION": region,

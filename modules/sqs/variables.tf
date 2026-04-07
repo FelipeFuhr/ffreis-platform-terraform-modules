@@ -46,7 +46,7 @@ variable "receive_wait_time_seconds" {
 }
 
 variable "kms_master_key_id" {
-  description = "KMS key ARN/alias for SSE-KMS. null = create a customer-managed key."
+  description = "Optional customer-managed KMS key ARN/alias for SSE-KMS. Null uses SQS-managed server-side encryption with no fixed monthly CMK cost."
   type        = string
   default     = null
 }

@@ -8,7 +8,7 @@ LEFTHOOK_VERSION ?= 1.7.10
 LEFTHOOK_DIR     ?= $(CURDIR)/.bin
 LEFTHOOK_BIN     ?= $(LEFTHOOK_DIR)/lefthook
 
-.PHONY: help fmt fmt-check validate lint security check coverage test test-integration test-short tidy plan secrets-scan-staged lefthook-bootstrap lefthook-install lefthook-run lefthook
+.PHONY: help fmt fmt-check validate lint security check coverage test test-ci test-integration test-short tidy plan secrets-scan-staged lefthook-bootstrap lefthook-install lefthook-run lefthook
 
 ## secrets-scan-staged: scan staged diff for secrets
 secrets-scan-staged:
@@ -55,12 +55,12 @@ fmt-check:
 
 ## validate: init and validate all modules (no backend required)
 validate:
-	@set -euo pipefail; \
+	@bash -euo pipefail -c ' \
 	find modules -mindepth 1 -maxdepth 1 -type d | sort | while read -r dir; do \
 	  echo "── Validating $$dir ──"; \
 	  terraform -chdir="$$dir" init -backend=false -input=false; \
 	  terraform -chdir="$$dir" validate; \
-	done
+	done'
 
 ## lint: run tflint across all modules
 lint:
@@ -81,6 +81,10 @@ tidy:
 
 ## test: alias for test-integration (deploys + destroys real AWS resources)
 test: test-integration
+
+## test-ci: run Terratest suite in CI; tests skip gracefully when AWS credentials are absent
+test-ci:
+	cd $(TEST_DIR) && go test -v -timeout $(TEST_TIMEOUT) -count=1 ./...
 
 ## test-integration: run all Terratest integration tests (deploys + destroys real AWS resources)
 test-integration:

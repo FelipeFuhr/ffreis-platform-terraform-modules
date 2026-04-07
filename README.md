@@ -49,6 +49,7 @@ These modules are **not** a thin wrapper. They encode decisions: RDS always uses
 | [`vpc-endpoint`](#vpc-endpoint) | Gateway (S3, DynamoDB) and Interface endpoints — keep traffic off the internet |
 | [`acm-certificate`](#acm-certificate) | ACM cert with auto Route 53 DNS validation and `create_before_destroy` |
 | [`alb`](#alb) | ALB: HTTPS redirect, WAF association, target groups, listener rules |
+| `cloudfront-website` | Static website origin bucket + CloudFront distribution with access logging, caller-supplied WAF, and optional CMK |
 
 ### Storage
 
@@ -69,6 +70,7 @@ These modules are **not** a thin wrapper. They encode decisions: RDS always uses
 | [`sns`](#sns) | SNS topic: SSE-KMS, subscriptions, filter policies |
 | [`eventbridge-rule`](#eventbridge-rule) | EventBridge rule: schedule or pattern, multiple targets |
 | [`kinesis-stream`](#kinesis-stream) | Kinesis Data Stream: ON_DEMAND mode, SSE-KMS, enhanced metrics |
+| `ses-email-forwarder` | Inbound SES rule set, encrypted S3 mail store, and Lambda-based forwarding with optional CMKs |
 
 ### Compute
 
@@ -1443,11 +1445,21 @@ Structure for this repo:
 ```
 test/
   s3_bucket_test.go
-  vpc_test.go
-  rds_test.go
-  lambda_test.go
+  cloudtrail_test.go
+  ecs_cluster_test.go
+  cloudfront_website_validate_test.go
+  ses_email_forwarder_validate_test.go
   helpers_test.go    # shared setup: region, prefix, tag baseline
 ```
+
+### Current coverage in this repo
+
+| Coverage mode | Modules |
+|---|---|
+| Live Terratest apply/destroy | `s3-bucket`, `dynamodb-table`, `iam-role`, `kms-key`, `sns`, `sqs`, `ecr`, `ecs-cluster`, `cloudtrail` |
+| Validate-only fixture tests | `cloudfront-website`, `ses-email-forwarder` |
+
+The regular CI path runs `make test-ci`. Live AWS tests execute when credentials are present and skip cleanly otherwise; the validate-only fixture tests always run and catch module interface regressions for the higher-friction modules.
 
 Example test for the `s3-bucket` module:
 
