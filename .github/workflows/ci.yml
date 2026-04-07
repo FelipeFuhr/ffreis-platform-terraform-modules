@@ -58,7 +58,7 @@ jobs:
     needs: [fmt]
     uses: FelipeFuhr/ffreis-workflows-terraform/.github/workflows/tf-lint.yml@e0cd54322d52fe7c522dd0bc2c46d56df2ceae43
 
-  # ── 5. Security (Trivy FINAL FIX) ───────────────────────────────────────────
+  # ── 5. Security (Trivy FINAL FIX - stable) ──────────────────────────────────
   security:
     needs: [fmt]
     name: Security (Trivy)
@@ -71,19 +71,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
-      # Install Trivy safely
+      # ✅ Robust install via official apt repo (no version guessing)
       - name: Install Trivy
         run: |
           set -euo pipefail
-          TRIVY_VERSION="0.50.2"
 
-          wget https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
-          tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
-          sudo mv trivy /usr/local/bin/
+          sudo apt-get update -y
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
+            | sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" \
+            | sudo tee /etc/apt/sources.list.d/trivy.list
+
+          sudo apt-get update -y
+          sudo apt-get install -y trivy
 
           trivy --version
 
-      # Show findings
+      # ✅ Show findings (always prints)
       - name: Trivy config scan (table)
         id: trivy_scan
         continue-on-error: true
@@ -93,7 +100,7 @@ jobs:
             --format table \
             --exit-code 1
 
-      # Generate SARIF
+      # ✅ SARIF for GitHub Security tab
       - name: Trivy config scan (SARIF)
         run: |
           trivy config . \
@@ -107,7 +114,7 @@ jobs:
         with:
           sarif_file: trivy.sarif
 
-      # Fail AFTER showing findings
+      # ✅ Fail AFTER printing findings
       - name: Fail if Trivy found issues
         if: steps.trivy_scan.outcome == 'failure'
         run: |
