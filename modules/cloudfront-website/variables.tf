@@ -7,6 +7,11 @@ variable "api_gateway_url" {
   description = "API Gateway HTTP invoke URL (e.g. https://abc.execute-api.us-east-1.amazonaws.com). Required when api_path_patterns is non-empty."
   type        = string
   default     = null
+
+  validation {
+    condition     = length(var.api_path_patterns) == 0 || var.api_gateway_url != null
+    error_message = "api_gateway_url must be provided when api_path_patterns is non-empty."
+  }
 }
 
 variable "api_path_patterns" {
@@ -25,6 +30,11 @@ variable "acm_certificate_arn" {
   description = "ACM certificate ARN for the custom domain names. Must be in us-east-1. Required when domain_names is non-empty."
   type        = string
   default     = null
+
+  validation {
+    condition     = length(var.domain_names) == 0 || (var.acm_certificate_arn != null && trim(var.acm_certificate_arn) != "")
+    error_message = "acm_certificate_arn must be provided and non-empty when domain_names is non-empty."
+  }
 }
 
 variable "price_class" {

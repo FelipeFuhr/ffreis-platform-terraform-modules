@@ -128,6 +128,25 @@ resource "aws_lambda_function" "this" {
   # Ensure the log group exists before the function (avoid race on first deploy).
   depends_on = [aws_cloudwatch_log_group.lambda]
 
+  lifecycle {
+    precondition {
+      condition     = (var.s3_bucket == null) == (var.s3_key == null)
+      error_message = "s3_bucket and s3_key must be provided together or both left null."
+    }
+    precondition {
+      condition     = var.image_uri != null || var.filename != null || var.s3_bucket != null
+      error_message = "When image_uri is null, either filename or both s3_bucket and s3_key must be provided."
+    }
+    precondition {
+      condition     = var.image_uri == null || (var.filename == null && var.s3_bucket == null)
+      error_message = "image_uri is mutually exclusive with filename and s3_bucket/s3_key."
+    }
+    precondition {
+      condition     = var.filename == null || var.s3_bucket == null
+      error_message = "filename is mutually exclusive with s3_bucket/s3_key."
+    }
+  }
+
   tags = var.tags
 }
 

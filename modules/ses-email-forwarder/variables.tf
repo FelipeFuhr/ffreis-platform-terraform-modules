@@ -35,12 +35,23 @@ variable "email_key_prefix" {
   description = "S3 key prefix (no trailing slash) where SES stores raw emails."
   type        = string
   default     = "emails"
+
+  validation {
+    condition     = var.email_key_prefix == trimsuffix(var.email_key_prefix, "/")
+    error_message = "email_key_prefix must not end with a trailing slash."
+  }
 }
 
 variable "rule_set_name" {
-  description = "SES receipt rule set name. This rule set will be set as the active one in the account."
+  description = "SES receipt rule set name. This rule set will be set as the active one in the account when activate_rule_set is true."
   type        = string
   default     = "default-rule-set"
+}
+
+variable "activate_rule_set" {
+  description = "Whether to set this receipt rule set as the active one in the account. Activating a rule set is account-wide and will replace any currently active rule set in the region."
+  type        = bool
+  default     = true
 }
 
 variable "log_retention_days" {

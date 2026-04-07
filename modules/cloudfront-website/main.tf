@@ -110,6 +110,9 @@ resource "aws_cloudfront_distribution" "website" {
     domain_name              = aws_s3_bucket.website.bucket_regional_domain_name
     origin_id                = "S3-${var.bucket_name}"
     origin_access_control_id = aws_cloudfront_origin_access_control.website.id
+    s3_origin_config {
+      origin_access_identity = ""
+    }
   }
 
   # API Gateway origin (conditional)

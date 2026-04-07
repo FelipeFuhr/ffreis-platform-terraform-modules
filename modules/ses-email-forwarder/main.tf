@@ -52,7 +52,7 @@ data "aws_iam_policy_document" "emails_bucket_policy" {
     sid       = "AllowSESPuts"
     effect    = "Allow"
     actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.emails.arn}/*"]
+    resources = ["${aws_s3_bucket.emails.arn}/${trim(var.email_key_prefix, "/")}/*"]
 
     principals {
       type        = "Service"
@@ -80,7 +80,7 @@ resource "aws_s3_bucket_policy" "emails" {
 data "archive_file" "forwarder" {
   type        = "zip"
   source_file = "${path.module}/lambda/forwarder.py"
-  output_path = "${path.root}/.terraform/ses-email-forwarder.zip"
+  output_path = "${path.module}/ses-email-forwarder.zip"
 }
 
 data "aws_iam_policy_document" "lambda_assume" {
@@ -190,13 +190,14 @@ resource "aws_ses_receipt_rule_set" "this" {
 }
 
 resource "aws_ses_active_receipt_rule_set" "this" {
+  count         = var.activate_rule_set ? 1 : 0
   rule_set_name = aws_ses_receipt_rule_set.this.rule_set_name
 }
 
 resource "aws_ses_receipt_rule" "forward" {
   name          = "${replace(var.domain_name, ".", "-")}-forward"
   rule_set_name = aws_ses_receipt_rule_set.this.rule_set_name
-  # Empty recipients list matches all addresses for the verified domain
+  # Match email recipients for the configured verified domain
   recipients   = [var.domain_name]
   enabled      = true
   scan_enabled = true
