@@ -69,7 +69,8 @@ resource "aws_apigatewayv2_route" "this" {
 resource "aws_cloudwatch_log_group" "access" {
   count = var.access_log_arn == null ? 1 : 0
 
-  name              = "/aws/apigateway/${var.name}/${var.stage_name}"
+  # CloudWatch log group names don't allow $ character, so replace it
+  name              = "/aws/apigateway/${var.name}/${replace(var.stage_name, "$", "")}"
   retention_in_days = var.access_log_retention_days
   kms_key_id        = var.access_log_kms_key_arn
 
