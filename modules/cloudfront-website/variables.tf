@@ -42,12 +42,13 @@ variable "cloudfront_access_logs_prefix" {
 }
 
 variable "waf_web_acl_id" {
-  description = "WAF Web ACL ID or ARN associated with the CloudFront distribution."
+  description = "Optional WAF Web ACL ID or ARN associated with the CloudFront distribution. Null disables WAF association."
   type        = string
+  default     = null
 
   validation {
-    condition     = trimspace(var.waf_web_acl_id) != ""
-    error_message = "waf_web_acl_id must be a non-empty Web ACL identifier."
+    condition     = var.waf_web_acl_id == null || try(trimspace(var.waf_web_acl_id), "") != ""
+    error_message = "waf_web_acl_id must be null or a non-empty Web ACL identifier."
   }
 }
 

@@ -117,7 +117,13 @@ resource "aws_lambda_permission" "apigw" {
 
   statement_id  = "AllowAPIGatewayInvoke-${replace(replace(each.key, " ", "-"), "/", "-")}"
   action        = "lambda:InvokeFunction"
-  function_name = each.value.integration_uri
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.this.execution_arn}/*/*"
+  # Extract Lambda ARN from integration_uri format:
+  # arn:aws:apigateway:region:lambda:path/2015-03-31/functions/LAMBDA_ARN/invocations
+  function_name = replace(
+    replace(each.value.integration_uri, "/^.*\\/functions\\//", ""),
+    "/\\/invocations$/",
+    ""
+  )
+  principal  = "apigateway.amazonaws.com"
+  source_arn = "${aws_apigatewayv2_api.this.execution_arn}/*/*"
 }

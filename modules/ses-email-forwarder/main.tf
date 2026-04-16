@@ -6,7 +6,7 @@ locals {
   forwarder_name        = "${replace(var.domain_name, ".", "-")}-email-forwarder"
   receipt_rule_name     = "${replace(var.domain_name, ".", "-")}-forward"
   s3_access_logs_prefix = var.s3_access_logs_prefix != "" ? var.s3_access_logs_prefix : "${replace(var.domain_name, ".", "-")}/ses-email-forwarder/"
-  ses_receipt_rule_arn  = "arn:${data.aws_partition.current.partition}:ses:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:receipt-rule-set/${aws_ses_receipt_rule_set.this.rule_set_name}:receipt-rule/${local.receipt_rule_name}"
+  ses_receipt_rule_arn  = "arn:${data.aws_partition.current.partition}:ses:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:receipt-rule-set/${aws_ses_receipt_rule_set.this.rule_set_name}:receipt-rule/${local.receipt_rule_name}"
 }
 
 # ---------------------------------------------------------------------------
@@ -19,11 +19,6 @@ resource "aws_s3_bucket" "emails" {
   bucket = var.email_bucket_name
 
   tags = merge(var.tags, { Name = var.email_bucket_name })
-}
-
-resource "aws_s3_bucket_versioning" "emails" {
-  bucket = aws_s3_bucket.emails.id
-  versioning_configuration { status = "Enabled" }
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "emails" {
@@ -124,7 +119,7 @@ data "aws_iam_policy_document" "lambda_policy" {
       "ses:SendEmail",
       "ses:SendRawEmail",
     ]
-    resources = ["arn:aws:ses:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:identity/*"]
+    resources = ["arn:aws:ses:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:identity/*"]
   }
 
   statement {
@@ -135,7 +130,7 @@ data "aws_iam_policy_document" "lambda_policy" {
       "logs:CreateLogStream",
       "logs:PutLogEvents",
     ]
-    resources = ["arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"]
+    resources = ["arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"]
   }
 }
 
@@ -249,5 +244,5 @@ resource "aws_route53_record" "mx" {
   name    = var.domain_name
   type    = "MX"
   ttl     = 600
-  records = ["10 inbound-smtp.${data.aws_region.current.region}.amazonaws.com"]
+  records = ["10 inbound-smtp.${data.aws_region.current.name}.amazonaws.com"]
 }
