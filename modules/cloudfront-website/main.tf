@@ -12,8 +12,9 @@ locals {
 
   managed_security_headers_policy_name = "Managed-SecurityHeadersPolicy"
 
-  # Strip the https:// scheme to get the plain hostname CloudFront needs
-  api_domain = var.api_gateway_url != null ? replace(var.api_gateway_url, "https://", "") : ""
+  # Strip the https:// scheme and trailing slash to get the plain hostname CloudFront needs
+  # API Gateway v2 invoke URLs include a trailing slash: https://abc123.execute-api.region.amazonaws.com/
+  api_domain = var.api_gateway_url != null ? trimsuffix(replace(var.api_gateway_url, "https://", ""), "/") : ""
 
   has_custom_domain      = length(var.domain_names) > 0
   has_api                = var.api_gateway_url != null && length(var.api_path_patterns) > 0
