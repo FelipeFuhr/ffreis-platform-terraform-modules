@@ -32,3 +32,13 @@ output "bucket_regional_domain_name" {
   description = "S3 bucket regional domain name."
   value       = aws_s3_bucket.website.bucket_regional_domain_name
 }
+
+output "cloudfront_url" {
+  description = "Direct HTTPS URL to the CloudFront distribution. Use this to verify the distribution works before DNS propagation."
+  value       = "https://${aws_cloudfront_distribution.website.domain_name}/"
+}
+
+output "encryption_algorithm" {
+  description = "S3 bucket encryption algorithm in use (AES256 = SSE-S3, aws:kms = SSE-KMS)."
+  value       = aws_s3_bucket_server_side_encryption_configuration.website.rule[0].apply_server_side_encryption_by_default[0].sse_algorithm
+}

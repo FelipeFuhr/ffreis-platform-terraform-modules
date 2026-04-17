@@ -51,8 +51,12 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "website" {
   bucket = aws_s3_bucket.website.id
   rule {
     apply_server_side_encryption_by_default {
+      # Use SSE-S3 (AES256) by default — always compatible with CloudFront OAC.
+      # KMS encryption requires the key policy to grant CloudFront decrypt access,
+      # which the AWS-managed S3 key (alias/aws/s3) does support, but custom CMKs
+      # need explicit policy statements. SSE-S3 avoids this complexity for static websites.
       kms_master_key_id = var.kms_key_arn
-      sse_algorithm     = "aws:kms"
+      sse_algorithm     = var.kms_key_arn != null ? "aws:kms" : "AES256"
     }
   }
 }
@@ -170,18 +174,22 @@ resource "aws_cloudfront_distribution" "website" {
   }
 
   # Custom error pages served from S3
+  # NOTE: If a custom error page (e.g., /404.html) itself returns an error (e.g.,
+  # because it doesn't exist in the bucket), CloudFront will return the raw S3
+  # XML error response. Always ensure error pages are deployed before the
+  # distribution is enabled or updated.
   custom_error_response {
     error_code            = 403
     response_code         = 404
     response_page_path    = var.not_found_page
-    error_caching_min_ttl = 10
+    error_caching_min_ttl = var.error_caching_min_ttl
   }
 
   custom_error_response {
     error_code            = 404
     response_code         = 404
     response_page_path    = var.not_found_page
-    error_caching_min_ttl = 10
+    error_caching_min_ttl = var.error_caching_min_ttl
   }
 
   custom_error_response {

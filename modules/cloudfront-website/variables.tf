@@ -115,6 +115,17 @@ variable "error_page" {
   default     = "/500.html"
 }
 
+variable "error_caching_min_ttl" {
+  description = "Minimum TTL in seconds for caching error responses. Set to 0 during debugging to see errors immediately. Higher values (e.g., 300) reduce origin load in production."
+  type        = number
+  default     = 0
+
+  validation {
+    condition     = var.error_caching_min_ttl >= 0 && var.error_caching_min_ttl <= 31536000
+    error_message = "error_caching_min_ttl must be between 0 and 31536000 (1 year)."
+  }
+}
+
 variable "tags" {
   description = "Tags applied to all resources."
   type        = map(string)
