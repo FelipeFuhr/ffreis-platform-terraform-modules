@@ -40,5 +40,5 @@ output "cloudfront_url" {
 
 output "encryption_algorithm" {
   description = "S3 bucket encryption algorithm in use (AES256 = SSE-S3, aws:kms = SSE-KMS)."
-  value       = aws_s3_bucket_server_side_encryption_configuration.website.rule[0].apply_server_side_encryption_by_default[0].sse_algorithm
+  value       = one(aws_s3_bucket_server_side_encryption_configuration.website.rule[*].apply_server_side_encryption_by_default[0].sse_algorithm)
 }
