@@ -52,6 +52,24 @@ variable "waf_web_acl_id" {
   }
 }
 
+variable "api_origin_custom_headers" {
+  description = <<-EOT
+    Headers CloudFront injects on every request forwarded to the API origin, as a
+    name => value map.
+
+    A Lambda Function URL with authorization_type = "NONE" is publicly invokable, so
+    CloudFront alone is not an access control — anything that can reach the Function URL
+    bypasses the distribution entirely. Injecting a shared secret here lets the origin
+    verify a request actually came through CloudFront and reject the rest.
+
+    Defaults to empty, which emits no custom_header block at all, so existing consumers
+    are unaffected.
+  EOT
+  type        = map(string)
+  default     = {}
+  sensitive   = true
+}
+
 variable "api_gateway_url" {
   description = "API Gateway HTTP invoke URL (e.g. https://abc.execute-api.us-east-1.amazonaws.com). Required when api_path_patterns is non-empty."
   type        = string

@@ -158,6 +158,16 @@ resource "aws_cloudfront_distribution" "website" {
         origin_protocol_policy = "https-only"
         origin_ssl_protocols   = ["TLSv1.2"]
       }
+
+      # Headers CloudFront injects on every request forwarded to the API origin.
+      # Empty by default, so existing consumers emit no header block at all.
+      dynamic "custom_header" {
+        for_each = var.api_origin_custom_headers
+        content {
+          name  = custom_header.key
+          value = custom_header.value
+        }
+      }
     }
   }
 
