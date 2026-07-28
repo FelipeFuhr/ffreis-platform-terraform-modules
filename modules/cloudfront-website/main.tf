@@ -158,6 +158,24 @@ resource "aws_cloudfront_distribution" "website" {
         origin_protocol_policy = "https-only"
         origin_ssl_protocols   = ["TLSv1.2"]
       }
+
+      # Headers CloudFront injects on every request forwarded to the API origin.
+      # Empty by default, so existing consumers emit no header block at all.
+      #
+      # Iterates the KEYS, unwrapped with nonsensitive(), rather than the map
+      # itself. `var.api_origin_custom_headers` is sensitive, and Terraform
+      # rejects a for_each derived from a sensitive value outright ("Invalid
+      # dynamic for_each value") — the iteration count would leak into the plan.
+      # Header *names* are not secret, so unwrapping just the key set is safe;
+      # each value is looked up from the still-sensitive map, so the secret
+      # itself is never de-sensitised.
+      dynamic "custom_header" {
+        for_each = nonsensitive(toset(keys(var.api_origin_custom_headers)))
+        content {
+          name  = custom_header.value
+          value = var.api_origin_custom_headers[custom_header.value]
+        }
+      }
     }
   }
 
