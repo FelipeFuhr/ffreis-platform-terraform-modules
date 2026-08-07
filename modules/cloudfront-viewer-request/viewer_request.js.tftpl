@@ -94,6 +94,13 @@ function handler(event) {
     if (uri.startsWith(PASSTHROUGH_PREFIXES[q])) return request;
   }
 
+  // Flat-mode: with no language prefixes configured the site is single-language
+  // and served at the root (no /<lang>/ segment). Skip language routing entirely
+  // and apply only clean-URL / directory-index rewriting.
+  if (LANG_PREFIXES.length === 0) {
+    return cleanUrl(request, uri);
+  }
+
   for (var i = 0; i < LANG_PREFIXES.length; i++) {
     var prefix = '/' + LANG_PREFIXES[i];
     if (uri === prefix || uri === prefix + '/' || uri.startsWith(prefix + '/')) {

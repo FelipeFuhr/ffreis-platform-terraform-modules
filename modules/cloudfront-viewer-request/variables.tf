@@ -9,7 +9,7 @@ variable "environment" {
 }
 
 variable "lang_prefixes" {
-  description = "Ordered list of URL language prefixes. Used for both language routing and clean-URL detection."
+  description = "Ordered list of URL language prefixes. Used for both language routing and clean-URL detection. Pass an empty list ([]) for flat-mode: a single-language site served at the root with no /<lang>/ segment — language routing is skipped and only clean-URL / directory-index rewriting applies."
   type        = list(string)
 }
 
