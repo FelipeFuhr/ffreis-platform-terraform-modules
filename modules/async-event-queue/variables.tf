@@ -300,7 +300,10 @@ variable "maximum_concurrency" {
   default     = null
 
   validation {
-    condition     = var.maximum_concurrency == null || (var.maximum_concurrency >= 2 && var.maximum_concurrency <= 1000)
+    # Terraform evaluates both operands of `||`, so a numeric comparison on
+    # null fails even when the left operand is true. Use a conditional to
+    # avoid evaluating the range check for the documented null default.
+    condition     = var.maximum_concurrency == null ? true : (var.maximum_concurrency >= 2 && var.maximum_concurrency <= 1000)
     error_message = "maximum_concurrency must be between 2 and 1000 (the SQS ESM floor is 2)."
   }
 }
