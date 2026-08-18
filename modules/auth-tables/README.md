@@ -55,17 +55,28 @@ secrets + recovery codes, off for pending auth + verification tokens — a
 
 ## $0 fixed cost
 
-`PAY_PER_REQUEST` on all four tables, and every table's `server_side_encryption`
-block sets `kms_key_arn = null` (not exposed as a variable — this module never
-allows overriding it) so encryption always resolves to the **AWS-owned key**:
-no monthly key fee, no per-request KMS API charges, doesn't count against KMS
-quotas. This is deliberately **not** the AWS-managed alias
-(`alias/aws/dynamodb`) — that alias also has no monthly fee, but it does bill
-standard per-request KMS API charges beyond the free tier, and it's easy to
-reach for by name-confusion with "AWS-owned." A customer-managed CMK
-(`aws_kms_key`, ~$1/mo) is out of scope entirely. Point-in-time recovery on the
-two durable tables adds a small usage-based cost (proportional to table size),
-not a fixed monthly fee.
+`PAY_PER_REQUEST` on all four tables, and **no `server_side_encryption` block at
+all** — omitting it is what selects the **AWS-owned key**: encryption at rest is
+still on, with no monthly key fee, no per-request KMS API charges, and no KMS
+quota consumption.
+
+The omission is load-bearing, so do not "tidy it up":
+
+| What you write | What you get | Cost |
+|---|---|---|
+| *(no block)* | AWS-**owned** key | $0, zero KMS API calls |
+| `enabled = true` | AWS-**managed** `alias/aws/dynamodb` | no key fee, but **every read and write is a metered KMS request** |
+| `enabled = true` + `kms_key_arn` | Customer-managed CMK | ~$1/mo per key + metered requests |
+
+`enabled = true` with a null `kms_key_arn` is the middle row, not the top one —
+the null does not opt you out. That mistake is easy to make because `checkov`'s
+`CKV_AWS_119` is satisfied by the mere *presence* of a `kms_key_arn` key
+regardless of its value, so adding the block silently buys a metered key and
+turns the scanner green. This module instead carries an explicit, justified
+`#checkov:skip=CKV_AWS_119` on each table.
+
+Point-in-time recovery on the two durable tables adds a small usage-based cost
+(proportional to table size), not a fixed monthly fee.
 
 ## Usage
 

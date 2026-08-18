@@ -59,12 +59,13 @@ resource "aws_dynamodb_table" "mfa_secrets" {
     enabled = true
   }
 
-  # AWS-owned key — see the module header for why kms_key_arn is a literal
-  # null rather than a variable.
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = null
-  }
+  # AWS-OWNED key: the server_side_encryption block is OMITTED ON PURPOSE.
+  # This is the only genuinely $0 tier. `enabled = true` (with or without a null
+  # kms_key_arn) selects the AWS-MANAGED key alias/aws/dynamodb, which carries no
+  # per-key fee but meters EVERY read and write as a KMS request — see the
+  # workspace no-KMS policy. Do not "fix" a scanner finding by adding this block.
+  #checkov:skip=CKV_AWS_119: DynamoDB CMK encryption is deliberately not used
+  # fleet-wide; AWS-owned encryption at rest is still on, it simply is not a CMK.
 
   tags = var.tags
 }
@@ -104,12 +105,13 @@ resource "aws_dynamodb_table" "recovery_codes" {
     enabled = true
   }
 
-  # AWS-owned key — see the module header for why kms_key_arn is a literal
-  # null rather than a variable.
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = null
-  }
+  # AWS-OWNED key: the server_side_encryption block is OMITTED ON PURPOSE.
+  # This is the only genuinely $0 tier. `enabled = true` (with or without a null
+  # kms_key_arn) selects the AWS-MANAGED key alias/aws/dynamodb, which carries no
+  # per-key fee but meters EVERY read and write as a KMS request — see the
+  # workspace no-KMS policy. Do not "fix" a scanner finding by adding this block.
+  #checkov:skip=CKV_AWS_119: DynamoDB CMK encryption is deliberately not used
+  # fleet-wide; AWS-owned encryption at rest is still on, it simply is not a CMK.
 
   tags = var.tags
 }
@@ -149,12 +151,13 @@ resource "aws_dynamodb_table" "pending_auth" {
     enabled = false
   }
 
-  # AWS-owned key — see the module header for why kms_key_arn is a literal
-  # null rather than a variable.
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = null
-  }
+  # AWS-OWNED key: the server_side_encryption block is OMITTED ON PURPOSE.
+  # This is the only genuinely $0 tier. `enabled = true` (with or without a null
+  # kms_key_arn) selects the AWS-MANAGED key alias/aws/dynamodb, which carries no
+  # per-key fee but meters EVERY read and write as a KMS request — see the
+  # workspace no-KMS policy. Do not "fix" a scanner finding by adding this block.
+  #checkov:skip=CKV_AWS_119: DynamoDB CMK encryption is deliberately not used
+  # fleet-wide; AWS-owned encryption at rest is still on, it simply is not a CMK.
 
   tags = var.tags
 }
@@ -195,12 +198,13 @@ resource "aws_dynamodb_table" "verification_tokens" {
     enabled = false
   }
 
-  # AWS-owned key — see the module header for why kms_key_arn is a literal
-  # null rather than a variable.
-  server_side_encryption {
-    enabled     = true
-    kms_key_arn = null
-  }
+  # AWS-OWNED key: the server_side_encryption block is OMITTED ON PURPOSE.
+  # This is the only genuinely $0 tier. `enabled = true` (with or without a null
+  # kms_key_arn) selects the AWS-MANAGED key alias/aws/dynamodb, which carries no
+  # per-key fee but meters EVERY read and write as a KMS request — see the
+  # workspace no-KMS policy. Do not "fix" a scanner finding by adding this block.
+  #checkov:skip=CKV_AWS_119: DynamoDB CMK encryption is deliberately not used
+  # fleet-wide; AWS-owned encryption at rest is still on, it simply is not a CMK.
 
   tags = var.tags
 }
