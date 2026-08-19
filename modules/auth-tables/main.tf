@@ -41,7 +41,11 @@ locals {
 # MFA (TOTP) secrets — DURABLE. HASH UserId. No TTL: enrollment persists
 # until the user (or an admin) explicitly disables 2FA.
 # ---------------------------------------------------------------------------
-resource "aws_dynamodb_table" "mfa_secrets" {
+# The `nosemgrep` below pairs with the `checkov:skip=CKV_AWS_119` inside this
+# resource: both scanners want a customer-managed KMS key. Fleet policy is
+# AWS-owned encryption (the block is omitted on purpose — see the header), so
+# this is a deliberate, documented deviation, not an unreviewed finding.
+resource "aws_dynamodb_table" "mfa_secrets" { # nosemgrep: terraform.aws.security.aws-dynamodb-table-unencrypted.aws-dynamodb-table-unencrypted
   count = var.create_mfa_secrets_table ? 1 : 0
 
   name                        = local.mfa_secrets_table_name
@@ -82,7 +86,11 @@ resource "terraform_data" "mfa_secrets_destroy_guard" {
 # store only a hash of the code, never the plaintext). No TTL: codes remain
 # valid until consumed or the user regenerates their set.
 # ---------------------------------------------------------------------------
-resource "aws_dynamodb_table" "recovery_codes" {
+# The `nosemgrep` below pairs with the `checkov:skip=CKV_AWS_119` inside this
+# resource: both scanners want a customer-managed KMS key. Fleet policy is
+# AWS-owned encryption (the block is omitted on purpose — see the header), so
+# this is a deliberate, documented deviation, not an unreviewed finding.
+resource "aws_dynamodb_table" "recovery_codes" { # nosemgrep: terraform.aws.security.aws-dynamodb-table-unencrypted.aws-dynamodb-table-unencrypted
   count = var.create_recovery_codes_table ? 1 : 0
 
   name                        = local.recovery_codes_table_name
@@ -128,7 +136,11 @@ resource "terraform_data" "recovery_codes_destroy_guard" {
 # partial login between the primary factor succeeding and MFA confirmation.
 # Losing an in-flight row just makes the user sign in again.
 # ---------------------------------------------------------------------------
-resource "aws_dynamodb_table" "pending_auth" {
+# The `nosemgrep` below pairs with the `checkov:skip=CKV_AWS_119` inside this
+# resource: both scanners want a customer-managed KMS key. Fleet policy is
+# AWS-owned encryption (the block is omitted on purpose — see the header), so
+# this is a deliberate, documented deviation, not an unreviewed finding.
+resource "aws_dynamodb_table" "pending_auth" { # nosemgrep: terraform.aws.security.aws-dynamodb-table-unencrypted.aws-dynamodb-table-unencrypted
   count = var.create_pending_auth_table ? 1 : 0
 
   name                        = local.pending_auth_table_name
@@ -175,7 +187,11 @@ resource "terraform_data" "pending_auth_destroy_guard" {
 # similar flows. Losing an in-flight row just makes the user request a new
 # link.
 # ---------------------------------------------------------------------------
-resource "aws_dynamodb_table" "verification_tokens" {
+# The `nosemgrep` below pairs with the `checkov:skip=CKV_AWS_119` inside this
+# resource: both scanners want a customer-managed KMS key. Fleet policy is
+# AWS-owned encryption (the block is omitted on purpose — see the header), so
+# this is a deliberate, documented deviation, not an unreviewed finding.
+resource "aws_dynamodb_table" "verification_tokens" { # nosemgrep: terraform.aws.security.aws-dynamodb-table-unencrypted.aws-dynamodb-table-unencrypted
   count = var.create_verification_tokens_table ? 1 : 0
 
   name                        = local.verification_tokens_table_name
