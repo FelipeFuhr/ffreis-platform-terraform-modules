@@ -8,7 +8,7 @@ LEFTHOOK_VERSION ?= 1.7.10
 LEFTHOOK_DIR     ?= $(CURDIR)/.bin
 LEFTHOOK_BIN     ?= $(LEFTHOOK_DIR)/lefthook
 
-.PHONY: help fmt fmt-check validate lint security check coverage test test-ci test-integration test-short tidy plan secrets-scan-staged lefthook-bootstrap lefthook-install lefthook-run lefthook
+.PHONY: help fmt fmt-check validate lint security sec check coverage test test-ci test-integration test-short tidy plan secrets-scan-staged lefthook-bootstrap lefthook-install lefthook-run lefthook
 
 ## secrets-scan-staged: scan staged diff for secrets
 secrets-scan-staged:
@@ -70,6 +70,9 @@ lint:
 ## security: run trivy Terraform config scan
 security:
 	trivy config --exit-code 1 --severity HIGH,CRITICAL .
+
+## sec: alias for security (shared lefthook complex/release tiers call `make sec`)
+sec: security
 
 ## ── Terratest targets ────────────────────────────────────────────────────────
 # Requires: AWS credentials (AWS_TEST_ROLE_ARN or AWS_ACCESS_KEY_ID).
