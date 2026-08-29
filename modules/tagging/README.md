@@ -67,7 +67,7 @@ resource "aws_dynamodb_table" "experiments" {
 | `BackupPolicy` | ✅ | Defaults to `none` |
 | `LifecycleState` | ✅ | `production` \| `development` \| `experiment` \| `legacy` (validated) |
 | `FixedCostTier` | ✅ | `none` \| `low` (<$1/mo) \| `medium` ($1-$10/mo) \| `high` (>$10/mo) (validated) |
-| `Domain` | ✅ | `flemming.com.br` \| `ffreis.com` \| `petlook.ai` \| `petlook.app` \| `dashboard.ffreis.com` \| `uxstoryteller.ffreis.com` \| `pocketworldarcade.ffreis.com` \| `pocketworldarcade.app` \| `internal` (validated) |
+| `Domain` | ✅ | `flemming.com.br` \| `ffreis.com` \| `petlook.ai` \| `petlook.app` \| `dashboard.ffreis.com` \| `uxstoryteller.ffreis.com` \| `pocketworldarcade.ffreis.com` \| `pocketworldarcade.app` \| `urbs.ffreis.com` \| `media.ffreis.com` \| `internal` (validated) |
 | `TerraformVersion` | conditional | Emitted only if `terraform_version` is set |
 | `Repository` | conditional | Emitted only if `repository` is set |
 
