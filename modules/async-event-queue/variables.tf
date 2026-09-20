@@ -300,7 +300,14 @@ variable "maximum_concurrency" {
   default     = null
 
   validation {
-    condition     = var.maximum_concurrency == null || (var.maximum_concurrency >= 2 && var.maximum_concurrency <= 1000)
+    # Ternary, not `== null || (...)`: Terraform 1.9.8's evaluator does not
+    # short-circuit `||` around a numeric comparison on a null operand — a
+    # caller that leaves this at its null default fails `terraform validate`
+    # ("Error during operation: argument must not be null"), even though
+    # plan/apply are unaffected. The ternary's untaken branch is never
+    # evaluated, which sidesteps the bug. Confirmed against 1.9.8 (repro) and
+    # 1.15.8 (passes either way, so this form is safe for both).
+    condition     = var.maximum_concurrency == null ? true : (var.maximum_concurrency >= 2 && var.maximum_concurrency <= 1000)
     error_message = "maximum_concurrency must be between 2 and 1000 (the SQS ESM floor is 2)."
   }
 }
