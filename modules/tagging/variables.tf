@@ -1,5 +1,5 @@
 variable "project" {
-  description = "Product / project slug. Drives Cost Explorer per-product grouping. Examples: 'flemming', 'petlook', 'ffreis-website', 'platform-shared-infra'."
+  description = "Product / project slug. Drives Cost Explorer per-product grouping. Examples: 'my-product', 'acme', 'internal-platform'."
   type        = string
 }
 
@@ -19,12 +19,12 @@ variable "stack" {
 }
 
 variable "layer" {
-  description = "Sub-component inside the stack (e.g. 'flemming-infra', 'email-forwarder', 'website')."
+  description = "Sub-component inside the stack (e.g. 'my-product-infra', 'email-forwarder', 'website')."
   type        = string
 }
 
 variable "terraform_repo" {
-  description = "Name of the Terraform repo that owns this resource (e.g. 'ffreis-flemming-infra')."
+  description = "Name of the Terraform repo that owns this resource (e.g. 'my-org-my-product-infra')."
   type        = string
 }
 
@@ -40,7 +40,7 @@ variable "terraform_version" {
 }
 
 variable "cost_center" {
-  description = "Per-product cost center for Cost Explorer grouping. Examples: 'flemming', 'petlook', 'ffreis-com', 'ffreis-website', 'platform', 'dashboard', 'ai-ask'. Do NOT use a single shared value (e.g. 'engineering') — it defeats the point of per-product budget visibility."
+  description = "Per-product cost center for Cost Explorer grouping. Examples: 'my-product', 'acme', 'internal-platform', 'dashboard'. Do NOT use a single shared value (e.g. 'engineering') — it defeats the point of per-product budget visibility."
   type        = string
 }
 
@@ -57,7 +57,7 @@ variable "managed_by" {
 }
 
 variable "repository" {
-  description = "Source repository URL (e.g. 'github.com/FelipeFuhr/ffreis-flemming-infra')."
+  description = "Source repository URL (e.g. 'github.com/my-org/my-product-infra')."
   type        = string
   default     = ""
 }
@@ -107,30 +107,13 @@ variable "fixed_cost_tier" {
 }
 
 variable "domain" {
-  description = "Public-facing domain (or subdomain) this resource serves. Cross-cuts Project (a shared stack may serve multiple domains). Subdomains are first-class so Cost Explorer can split spend per surface (e.g. dashboard vs. main site)."
+  description = "Public-facing domain (or subdomain) this resource serves, or 'internal' if it is not tied to a public domain. Cross-cuts Project (a shared stack may serve multiple domains). Subdomains are first-class so Cost Explorer can split spend per surface (e.g. dashboard vs. main site). Must be a valid domain/subdomain (e.g. 'example.com', 'app.example.com') or the literal string 'internal'."
   type        = string
   default     = "internal"
 
   validation {
-    condition = contains([
-      "flemming.com.br",
-      "ffreis.com",
-      "petlook.ai",
-      "petlook.app",
-      "dashboard.ffreis.com",
-      "uxstoryteller.ffreis.com",
-      "pocketworldarcade.ffreis.com",
-      "pocketworldarcade.app",
-      "urbs.ffreis.com",
-      "media.ffreis.com",
-      "forma.ffreis.com",
-      "editify.ffreis.com",
-      "flowgraph.ffreis.com",
-      "ondemoro.app",
-      "knowalchemy.com",
-      "internal",
-    ], var.domain)
-    error_message = "domain must be one of: flemming.com.br, ffreis.com, petlook.ai, petlook.app, dashboard.ffreis.com, uxstoryteller.ffreis.com, pocketworldarcade.ffreis.com, pocketworldarcade.app, urbs.ffreis.com, media.ffreis.com, forma.ffreis.com, editify.ffreis.com, flowgraph.ffreis.com, ondemoro.app, knowalchemy.com, internal."
+    condition     = var.domain == "internal" || can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$", var.domain))
+    error_message = "domain must be any valid domain or subdomain (e.g. 'example.com', 'app.example.com') or the literal string 'internal'."
   }
 }
 

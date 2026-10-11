@@ -86,13 +86,13 @@ variable "dev_access_path" {
 }
 
 variable "dev_access_cookie_domain" {
-  description = "When non-empty, sets the Domain attribute on the dev-access cookie (e.g. '.ffreis.com' to share the cookie across all subdomains). Leave empty to scope the cookie to the exact request host."
+  description = "When non-empty, sets the Domain attribute on the dev-access cookie (e.g. '.example.com' to share the cookie across all subdomains). Leave empty to scope the cookie to the exact request host."
   type        = string
   default     = ""
 }
 
 variable "www_redirect_host" {
-  description = "When non-empty, any request whose Host header starts with 'www.' is 301-redirected to 'https://<value><uri>'. Set to the bare apex domain (e.g. 'ffreis.com'). Leave empty to disable."
+  description = "When non-empty, any request whose Host header starts with 'www.' is 301-redirected to 'https://<value><uri>'. Set to the bare apex domain (e.g. 'example.com'). Leave empty to disable."
   type        = string
   default     = ""
 }

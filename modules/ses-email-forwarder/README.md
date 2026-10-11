@@ -50,12 +50,12 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_activate_rule_set"></a> [activate\_rule\_set](#input\_activate\_rule\_set) | Whether to set this receipt rule set as the active one in the account. Activating a rule set is account-wide and will replace any currently active rule set in the region. | `bool` | `true` | no |
-| <a name="input_domain_name"></a> [domain\_name](#input\_domain\_name) | Domain to receive email for (e.g. ffreis.com). Must already have an active SES domain identity. | `string` | n/a | yes |
+| <a name="input_domain_name"></a> [domain\_name](#input\_domain\_name) | Domain to receive email for (e.g. example.com). Must already have an active SES domain identity. | `string` | n/a | yes |
 | <a name="input_email_bucket_kms_key_arn"></a> [email\_bucket\_kms\_key\_arn](#input\_email\_bucket\_kms\_key\_arn) | Optional customer-managed KMS key ARN for inbound email bucket encryption. Null uses the AWS-managed S3 KMS key with no fixed monthly CMK cost. | `string` | `null` | no |
 | <a name="input_email_bucket_name"></a> [email\_bucket\_name](#input\_email\_bucket\_name) | S3 bucket name for storing raw inbound emails. Must be globally unique. | `string` | n/a | yes |
 | <a name="input_email_key_prefix"></a> [email\_key\_prefix](#input\_email\_key\_prefix) | S3 key prefix (no trailing slash) where SES stores raw emails. | `string` | `"emails"` | no |
 | <a name="input_forwarding_aliases"></a> [forwarding\_aliases](#input\_forwarding\_aliases) | Map of lower-case local-part → destination email address. Use "*" as a catch-all key. Example: { infrastructure = "me@gmail.com", felipefuhrdosreis = "me@gmail.com" } | `map(string)` | n/a | yes |
-| <a name="input_from_email"></a> [from\_email](#input\_from\_email) | SES-verified sender address used when re-sending forwarded mail (e.g. forwarding@ffreis.com). Must be within the verified domain. | `string` | n/a | yes |
+| <a name="input_from_email"></a> [from\_email](#input\_from\_email) | SES-verified sender address used when re-sending forwarded mail (e.g. forwarding@example.com). Must be within the verified domain. | `string` | n/a | yes |
 | <a name="input_hosted_zone_id"></a> [hosted\_zone\_id](#input\_hosted\_zone\_id) | Route 53 hosted zone ID for the domain. Used to create the MX record pointing to SES inbound. | `string` | n/a | yes |
 | <a name="input_log_kms_key_arn"></a> [log\_kms\_key\_arn](#input\_log\_kms\_key\_arn) | Optional customer-managed KMS key ARN for the email forwarder CloudWatch log group. Null uses the default CloudWatch Logs encryption with no fixed monthly CMK cost. | `string` | `null` | no |
 | <a name="input_log_retention_days"></a> [log\_retention\_days](#input\_log\_retention\_days) | CloudWatch log retention for the forwarder Lambda. | `number` | `365` | no |

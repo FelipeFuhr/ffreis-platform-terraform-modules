@@ -1,5 +1,5 @@
 variable "name" {
-  description = "Base name for the auth tables. Each table name is derived by appending a fixed suffix: '<name>-mfa-secrets', '<name>-recovery-codes', '<name>-pending-auth', '<name>-verification-tokens'. Compose the product and environment into this value, e.g. 'petlook-auth-dev'."
+  description = "Base name for the auth tables. Each table name is derived by appending a fixed suffix: '<name>-mfa-secrets', '<name>-recovery-codes', '<name>-pending-auth', '<name>-verification-tokens'. Compose the product and environment into this value, e.g. 'my-product-auth-dev'."
   type        = string
 }
 
