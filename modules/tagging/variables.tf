@@ -127,9 +127,10 @@ variable "domain" {
       "editify.ffreis.com",
       "flowgraph.ffreis.com",
       "ondemoro.app",
+      "knowalchemy.com",
       "internal",
     ], var.domain)
-    error_message = "domain must be one of: flemming.com.br, ffreis.com, petlook.ai, petlook.app, dashboard.ffreis.com, uxstoryteller.ffreis.com, pocketworldarcade.ffreis.com, pocketworldarcade.app, urbs.ffreis.com, media.ffreis.com, forma.ffreis.com, editify.ffreis.com, flowgraph.ffreis.com, ondemoro.app, internal."
+    error_message = "domain must be one of: flemming.com.br, ffreis.com, petlook.ai, petlook.app, dashboard.ffreis.com, uxstoryteller.ffreis.com, pocketworldarcade.ffreis.com, pocketworldarcade.app, urbs.ffreis.com, media.ffreis.com, forma.ffreis.com, editify.ffreis.com, flowgraph.ffreis.com, ondemoro.app, knowalchemy.com, internal."
   }
 }
 
