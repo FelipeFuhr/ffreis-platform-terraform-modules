@@ -6,8 +6,8 @@ sessions, and generic single-use verification tokens (email confirmation,
 password reset, invite links, and similar flows).
 
 **Product-agnostic.** Every table name derives from one `name` prefix — the
-caller composes product + environment into it (e.g. `"petlook-auth-dev"`,
-`"flemming-auth-prod"`). Nothing in this module is product-specific.
+caller composes product + environment into it (e.g. `"my-product-auth-dev"`,
+`"acme-auth-prod"`). Nothing in this module is product-specific.
 
 Not a replacement for `cognito-user-pool` — this module backs a **self-hosted**
 credential/session store; reach for `cognito-user-pool` when a managed identity
@@ -84,8 +84,8 @@ Point-in-time recovery on the two durable tables adds a small usage-based cost
 module "auth" {
   source = "git::https://github.com/FelipeFuhr/ffreis-platform-terraform-modules.git//modules/auth-tables?ref=v2.9.0"
 
-  name = "petlook-auth-${var.environment}"
-  tags = merge(module.tags.tags, { CostCenter = "petlook" })
+  name = "my-product-auth-${var.environment}"
+  tags = merge(module.tags.tags, { CostCenter = "my-product" })
 
   # A product with no 2FA would instead set:
   # create_mfa_secrets_table    = false
@@ -169,7 +169,7 @@ No modules.
 | <a name="input_create_verification_tokens_table"></a> [create\_verification\_tokens\_table](#input\_create\_verification\_tokens\_table) | Create the generic single-use verification tokens table (email verification, password reset, invite links, and similar flows). | `bool` | `true` | no |
 | <a name="input_mfa_secrets_deletion_protection_enabled"></a> [mfa\_secrets\_deletion\_protection\_enabled](#input\_mfa\_secrets\_deletion\_protection\_enabled) | DynamoDB deletion protection on the MFA secrets table. Defaults to true: losing this table locks every enrolled user out of their own account. | `bool` | `true` | no |
 | <a name="input_mfa_secrets_prevent_destroy"></a> [mfa\_secrets\_prevent\_destroy](#input\_mfa\_secrets\_prevent\_destroy) | Block terraform destroy/replace of the MFA secrets table with a lifecycle guard. Defaults to true for the same reason as deletion protection. To intentionally destroy the table, set this to false and apply before running destroy. | `bool` | `true` | no |
-| <a name="input_name"></a> [name](#input\_name) | Base name for the auth tables. Each table name is derived by appending a fixed suffix: '<name>-mfa-secrets', '<name>-recovery-codes', '<name>-pending-auth', '<name>-verification-tokens'. Compose the product and environment into this value, e.g. 'petlook-auth-dev'. | `string` | n/a | yes |
+| <a name="input_name"></a> [name](#input\_name) | Base name for the auth tables. Each table name is derived by appending a fixed suffix: '<name>-mfa-secrets', '<name>-recovery-codes', '<name>-pending-auth', '<name>-verification-tokens'. Compose the product and environment into this value, e.g. 'my-product-auth-dev'. | `string` | n/a | yes |
 | <a name="input_pending_auth_deletion_protection_enabled"></a> [pending\_auth\_deletion\_protection\_enabled](#input\_pending\_auth\_deletion\_protection\_enabled) | DynamoDB deletion protection on the pending auth table. Defaults to false: the table is ephemeral and TTL'd, so losing it only breaks logins that are already in flight, which self-heal on retry. | `bool` | `false` | no |
 | <a name="input_pending_auth_prevent_destroy"></a> [pending\_auth\_prevent\_destroy](#input\_pending\_auth\_prevent\_destroy) | Block terraform destroy/replace of the pending auth table with a lifecycle guard. Defaults to false for the same reason as deletion protection. | `bool` | `false` | no |
 | <a name="input_recovery_codes_deletion_protection_enabled"></a> [recovery\_codes\_deletion\_protection\_enabled](#input\_recovery\_codes\_deletion\_protection\_enabled) | DynamoDB deletion protection on the recovery codes table. Defaults to true: losing this table locks every enrolled user out of their own account. | `bool` | `true` | no |

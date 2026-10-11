@@ -1,5 +1,5 @@
 variable "domain_name" {
-  description = "Domain to receive email for (e.g. ffreis.com). Must already have an active SES domain identity."
+  description = "Domain to receive email for (e.g. example.com). Must already have an active SES domain identity."
   type        = string
 }
 
@@ -40,7 +40,7 @@ variable "forwarding_aliases" {
 }
 
 variable "from_email" {
-  description = "SES-verified sender address used when re-sending forwarded mail (e.g. forwarding@ffreis.com). Must be within the verified domain."
+  description = "SES-verified sender address used when re-sending forwarded mail (e.g. forwarding@example.com). Must be within the verified domain."
   type        = string
   validation {
     condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.from_email))

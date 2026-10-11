@@ -96,7 +96,7 @@ makes that safe. DLQ re-drive covers *failed*-message replay separately.
 
 > **⚠ NEVER `create_archive` on flows carrying secrets or PII.** Auth events contain
 > plaintext passwords; archiving writes them to S3. Form events contain submitter PII.
-> Archive is for non-secret content streams (e.g. the petlook product pipeline) only.
+> Archive is for non-secret content streams (e.g. a content-ingestion pipeline) only.
 
 ## Chaining
 

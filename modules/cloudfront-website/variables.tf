@@ -82,7 +82,7 @@ variable "api_gateway_url" {
 }
 
 variable "api_path_patterns" {
-  description = "CloudFront path patterns to route to the API Gateway origin instead of S3. e.g. [\"/contact\", \"/flemming-inscricao\"]."
+  description = "CloudFront path patterns to route to the API Gateway origin instead of S3. e.g. [\"/contact\", \"/signup\"]."
   type        = list(string)
   default     = []
 }

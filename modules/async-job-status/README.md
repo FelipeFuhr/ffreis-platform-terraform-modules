@@ -24,8 +24,8 @@ status Lambda** wired to `GET /api/status/{job_id}`.
 module "jobs" {
   source = "git::https://github.com/FelipeFuhr/ffreis-platform-terraform-modules.git//modules/async-job-status?ref=v2.2.0"
 
-  name = "flemming-jobs-${var.environment}"
-  tags = merge(module.tags.tags, { CostCenter = "flemming" })
+  name = "my-product-jobs-${var.environment}"
+  tags = merge(module.tags.tags, { CostCenter = "my-product" })
 }
 
 # consumer role: attach module.jobs.status_writer_policy_json
