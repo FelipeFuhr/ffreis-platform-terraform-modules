@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.15.1](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/compare/v2.15.0...v2.15.1) (2026-10-19)
+
+
+### Bug Fixes
+
+* **make:** move pin comments off the assignment line ([#102](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/issues/102)) ([b11a912](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/commit/b11a912a3b3bfff670264933d7f9e20a35b6bd4a))
+
 ## [2.15.0](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/compare/v2.14.0...v2.15.0) (2026-10-11)
 
 
