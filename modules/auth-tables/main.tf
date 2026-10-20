@@ -4,7 +4,7 @@
 # ("pending") auth sessions, and generic single-use verification tokens.
 #
 # Product-agnostic: every table name derives from a single `name` prefix (the
-# caller composes product + environment into it, e.g. "petlook-auth-dev").
+# caller composes product + environment into it, e.g. "my-product-auth-dev").
 # Each table is independently toggleable — a product that only needs
 # verification tokens (email confirmation, password reset) can disable the
 # other three.
