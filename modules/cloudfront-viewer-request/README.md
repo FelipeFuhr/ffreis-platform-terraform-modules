@@ -12,6 +12,29 @@ the entire fleet; site-specific config is injected via `templatefile()`.
 5. **Language routing** — requests not on a language prefix are 302-redirected to `/<lang><uri>` using cookie → country → default priority.
 6. **Clean-URL rewriting** — `.html` paths get a 301 canonical redirect; extensionless paths are rewritten to `/path/index.html` for the S3 fetch.
 
+## Query strings on generated redirects
+
+Every redirect this function **generates** (www, language routing, `.html`
+canonicalisation) carries the request's query string forward. CloudFront
+preserves a query string on requests it passes *through* to the origin, but a
+response object built here has only what its `location` header says — so
+building that header from `uri` alone silently drops `?a=b`.
+
+That is not cosmetic. A hosted-checkout handoff, an OAuth callback and a
+password-reset link each carry their only state in the query string; put a
+language or `.html` hop in front of one and the landing page receives
+nothing. Values arrive URL-decoded and are re-encoded on the way out, and a
+repeated key is re-emitted once per occurrence in its original order.
+
+The one deliberate exception is the cookie gate: the magic link does **not**
+forward its own `?token=<secret>` onto the landing URL, which would leak the
+shared dev secret into history, referrers and access logs.
+
+`test/cloudfront_viewer_request_test.go` renders this template through
+`templatefile()` and executes the result under `node`, so the assertions run
+against the artifact CloudFront actually gets rather than the unrendered
+`.tftpl`.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
