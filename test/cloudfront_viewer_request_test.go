@@ -255,7 +255,24 @@ func TestViewerRequestRedirectsPreserveTheQueryString(t *testing.T) {
 			wantLocation: "/en/search?q=blue%20white%3Fx%3D1",
 		},
 		{
-			name:         "parameter order is preserved, not alphabetised",
+			// Pins that every parameter is emitted exactly once, in the order
+			// of the querystring object `queryTail` is handed — nothing
+			// dropped, nothing duplicated, nothing alphabetised on the way
+			// out.
+			//
+			// It does NOT promise that a redirect preserves the order the
+			// VIEWER sent, and nothing should rely on that: CloudFront builds
+			// `request.querystring` as an object, and its key order is
+			// arbitrary. Measured against a live distribution running this
+			// function — `a=1&b=2` came back as `b=2&a=1`, `z=1&a=2&m=3` as
+			// `m=3&a=2&z=1`, while `b=1&a=2` came back unchanged — so the
+			// order is neither the source's nor alphabetical. That is
+			// harmless (query parameters are an unordered set, and every
+			// consumer reads them by name), but it is worth stating here so
+			// the next reader does not take this subtest for an end-to-end
+			// guarantee. The one ordering that IS guaranteed is within a
+			// single repeated key, via `multiValue` — the subtest above.
+			name:         "every parameter is emitted once, in the object's own order",
 			uri:          "/mock-checkout",
 			querystring:  "z=last&a=first",
 			host:         "example.test",

@@ -26,6 +26,13 @@ language or `.html` hop in front of one and the landing page receives
 nothing. Values arrive URL-decoded and are re-encoded on the way out, and a
 repeated key is re-emitted once per occurrence in its original order.
 
+Parameter order across *different* keys is **not** preserved, and nothing
+should depend on it: CloudFront exposes the query string as an object whose
+key order is arbitrary (measured live — `a=1&b=2` comes back `b=2&a=1`).
+Query parameters are an unordered set and every consumer reads them by name,
+so this is harmless; the ordering that *is* guaranteed is within one repeated
+key, via `multiValue`.
+
 The one deliberate exception is the cookie gate: the magic link does **not**
 forward its own `?token=<secret>` onto the landing URL, which would leak the
 shared dev secret into history, referrers and access logs.
