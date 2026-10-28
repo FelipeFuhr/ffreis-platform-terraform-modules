@@ -16,6 +16,17 @@
 //    to /<lang><uri> using cookie → country → default priority.
 // 6. Clean-URL rewriting — .html paths get a 301 canonical redirect;
 //    extensionless paths are rewritten to /path/index.html for the S3 fetch.
+//
+// INVARIANT: every redirect this function GENERATES must carry the request's
+// query string forward (see queryTail). CloudFront preserves the query string
+// on requests it passes through to the origin, but a response object built
+// here only has what its `location` header says — so building that header out
+// of `uri` alone silently drops `?a=b`. That is not cosmetic: a hosted
+// payment/checkout handoff, an OAuth callback and a password-reset link all
+// carry their only state in the query string, and a language or .html
+// canonicalisation hop in front of them loses it. The one deliberate
+// exception is the dev-access redirect below, which must NOT forward its
+// `?token=` onto the landing URL.
 
 %{ if dev_gate_enabled ~}
 var DEV_SECRET = "${dev_access_secret}";
@@ -38,6 +49,33 @@ var COOKIE_TO_PREFIX = ${cookie_to_prefix_json};
 var PASSTHROUGH_EXACT = ${passthrough_exact_json};
 var PASSTHROUGH_PREFIXES = ${passthrough_prefixes_json};
 
+// Rebuilds the request's query string as a `?a=b&c=d` tail for use in a
+// generated redirect's `location` header, or '' when there is none.
+//
+// CloudFront hands `request.querystring` over already URL-DECODED, as
+// { key: { value, multiValue? } }, so every key and value is re-encoded here
+// rather than concatenated raw. A repeated key arrives with `multiValue` and
+// is re-emitted once per occurrence, preserving order.
+function queryTail(request) {
+  var qs = request.querystring;
+  if (!qs) return '';
+  var keys = Object.keys(qs);
+  var parts = [];
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i];
+    var entry = qs[key] || {};
+    var encodedKey = encodeURIComponent(key);
+    if (entry.multiValue && entry.multiValue.length) {
+      for (var j = 0; j < entry.multiValue.length; j++) {
+        parts.push(encodedKey + '=' + encodeURIComponent(entry.multiValue[j].value));
+      }
+    } else {
+      parts.push(encodedKey + '=' + encodeURIComponent(entry.value || ''));
+    }
+  }
+  return parts.length ? '?' + parts.join('&') : '';
+}
+
 function handler(event) {
 %{ if healthz_enabled ~}
   if (event.request.uri === '/healthz') {
@@ -52,6 +90,10 @@ function handler(event) {
     var qs = request.querystring || {};
     var tok = qs['token'];
     if (tok && tok.value === DEV_SECRET) {
+      // Deliberately NOT queryTail(request): forwarding the magic link's
+      // own `?token=<secret>` onto the landing URL would leak the shared
+      // dev secret into history, referrers and logs. The cookie set below
+      // is the whole point of this hop.
       return {
         statusCode: 302,
         statusDescription: 'Found',
@@ -78,7 +120,7 @@ function handler(event) {
     return {
       statusCode: 301,
       statusDescription: 'Moved Permanently',
-      headers: { location: { value: 'https://${www_redirect_host}' + uri } }
+      headers: { location: { value: 'https://${www_redirect_host}' + uri + queryTail(request) } }
     };
   }
 
@@ -102,7 +144,7 @@ function handler(event) {
   }
 
   var lang = detectLang(request);
-  var target = '/' + lang + (uri === '/' ? '/' : uri);
+  var target = '/' + lang + (uri === '/' ? '/' : uri) + queryTail(request);
   return { statusCode: 302, statusDescription: 'Found', headers: { location: { value: target } } };
 }
 
@@ -127,7 +169,7 @@ function cleanUrl(request, uri) {
     var clean = uri.endsWith('/index.html')
       ? uri.slice(0, -'index.html'.length) || '/'
       : uri.slice(0, -5) || '/';
-    return { statusCode: 301, statusDescription: 'Moved Permanently', headers: { location: { value: clean } } };
+    return { statusCode: 301, statusDescription: 'Moved Permanently', headers: { location: { value: clean + queryTail(request) } } };
   }
 %{ endif ~}
   if (uri.endsWith('/')) {
