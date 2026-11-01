@@ -352,3 +352,257 @@ func TestViewerRequestPassthroughLeavesTheRequestAlone(t *testing.T) {
 		t.Errorf("uri: got %q, want %q", got.URI, "/api/orders")
 	}
 }
+
+// flatModeVars renders the function the way a single-language site at the
+// root configures it: no language prefixes, no default language, no
+// passthrough prefixes and no country map.
+//
+// `passthrough_prefixes = []` matters. Every CloudFront `request.uri` starts
+// with '/', so the PASSTHROUGH_PREFIXES loop matches `"/"` unconditionally
+// and returns the request before any rewriting — which made cleanUrl
+// unreachable for a site that tried to spell "pass everything through" that
+// way. Flat-mode is the supported spelling instead.
+func flatModeVars() map[string]interface{} {
+	return map[string]interface{}{
+		"canonicalize_html":    true,
+		"lang_prefixes":        []string{},
+		"default_lang":         "",
+		"passthrough_prefixes": []string{},
+		"country_to_lang":      map[string]string{},
+	}
+}
+
+// TestViewerRequestFlatModeRewritesWithoutLanguageRouting pins flat-mode:
+// with `lang_prefixes = []` the site is single-language and served at the
+// root, so language routing is skipped and only clean-URL / directory-index
+// rewriting applies.
+//
+// Before the flat-mode branch existed, `detectLang` returned DEFAULT_LANG
+// (”), so the redirect target was '/' + ” + uri — i.e. '//<path>' — and
+// cleanUrl was never reached at all. Every one of these cases 302'd instead.
+func TestViewerRequestFlatModeRewritesWithoutLanguageRouting(t *testing.T) {
+	t.Parallel()
+
+	code := renderViewerRequest(t, flatModeVars())
+
+	tests := []struct {
+		name       string
+		uri        string
+		wantStatus int
+		wantURI    string
+	}{
+		{
+			name:       "the bare root resolves to the root index",
+			uri:        "/",
+			wantStatus: 0,
+			wantURI:    "/index.html",
+		},
+		{
+			name:       "an extensionless page gets its directory index",
+			uri:        "/detector",
+			wantStatus: 0,
+			wantURI:    "/detector/index.html",
+		},
+		{
+			name:       "a trailing slash gets the same index, not a redirect",
+			uri:        "/detector/",
+			wantStatus: 0,
+			wantURI:    "/detector/index.html",
+		},
+		{
+			name:       "a nested extensionless page gets its directory index",
+			uri:        "/docs/getting-started",
+			wantStatus: 0,
+			wantURI:    "/docs/getting-started/index.html",
+		},
+		{
+			name:       "a path with an extension passes through untouched",
+			uri:        "/assets/style.css",
+			wantStatus: 0,
+			wantURI:    "/assets/style.css",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := runViewer(t, code, tc.uri, "", nil, "example.test")
+			if got.StatusCode != tc.wantStatus {
+				t.Errorf("status: got %d (location %q), want %d", got.StatusCode, got.Location, tc.wantStatus)
+			}
+			if got.URI != tc.wantURI {
+				t.Errorf("uri:\n got %q\nwant %q", got.URI, tc.wantURI)
+			}
+		})
+	}
+}
+
+// TestViewerRequestFlatModeCanonicalisesHtml checks that flat-mode still
+// reaches the .html canonicalisation inside cleanUrl — the branch returns
+// cleanUrl(), so the 301 must happen at the root with no language segment.
+func TestViewerRequestFlatModeCanonicalisesHtml(t *testing.T) {
+	t.Parallel()
+
+	code := renderViewerRequest(t, flatModeVars())
+
+	tests := []struct {
+		name         string
+		uri          string
+		querystring  string
+		wantLocation string
+	}{
+		{
+			name:         "a .html page canonicalises to its extensionless form",
+			uri:          "/detector.html",
+			wantLocation: "/detector",
+		},
+		{
+			name:         "index.html canonicalises to the root",
+			uri:          "/index.html",
+			wantLocation: "/",
+		},
+		{
+			name:         "canonicalisation still carries the query string",
+			uri:          "/detector.html",
+			querystring:  "ref=newsletter",
+			wantLocation: "/detector?ref=newsletter",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := runViewer(t, code, tc.uri, tc.querystring, nil, "example.test")
+			if got.StatusCode != 301 {
+				t.Errorf("status: got %d, want 301", got.StatusCode)
+			}
+			if got.Location != tc.wantLocation {
+				t.Errorf("location:\n got %q\nwant %q", got.Location, tc.wantLocation)
+			}
+		})
+	}
+}
+
+// TestViewerRequestFlatModeTerminatesInsteadOfLooping is the regression guard
+// for the defect flat-mode exists to kill.
+//
+// With `lang_prefixes = []` on the previous template, the language redirect
+// built '/' + DEFAULT_LANG + uri with DEFAULT_LANG = ”, so '/' became '//',
+// which matched no language prefix and redirected again: '//' -> '///' ->
+// '////', forever. Measured before the fix: 8 hops with no fixed point.
+//
+// Asserting "terminates" rather than "is not a 302" is deliberate. A fix
+// that merely REORDERED the redirect would still satisfy a status assertion
+// on the first hop while leaving the loop in place one step further along, so
+// this follows the function's own Location headers to a fixed point.
+func TestViewerRequestFlatModeTerminatesInsteadOfLooping(t *testing.T) {
+	t.Parallel()
+
+	code := renderViewerRequest(t, flatModeVars())
+
+	for _, start := range []string{"/", "/detector", "/detector/", "/index.html", "/assets/style.css"} {
+		t.Run(start, func(t *testing.T) {
+			uri := start
+			chain := []string{uri}
+
+			// A browser gives up around 20 hops; 8 is well past any
+			// legitimate chain here (the longest is .html -> clean -> origin).
+			for hop := 0; hop < 8; hop++ {
+				got := runViewer(t, code, uri, "", nil, "example.test")
+				if got.StatusCode == 0 {
+					return // reached the origin: terminated
+				}
+				if got.Location == "" || got.Location == uri {
+					return // a self-target or bodyless response is also a fixed point
+				}
+				chain = append(chain, got.Location)
+				uri = got.Location
+			}
+
+			t.Errorf("redirect loop: %s (no fixed point after 8 hops)", strings.Join(chain, " -> "))
+		})
+	}
+}
+
+// TestViewerRequestDevGateRunsBeforePassthroughInFlatMode pins the ordering
+// of the security gate against the routing change.
+//
+// The flat-mode branch was inserted AFTER the passthrough loops, which are
+// themselves after the cookie gate. That ordering is load-bearing: if the
+// gate ever moved below passthrough (or below flat-mode's early return), a
+// site with a passthrough prefix would serve unauthenticated traffic. So
+// this asserts the gate still wins over both.
+func TestViewerRequestDevGateRunsBeforePassthroughInFlatMode(t *testing.T) {
+	t.Parallel()
+
+	const secret = "s3cr3t-dev-token"
+
+	vars := flatModeVars()
+	vars["dev_access_secret"] = secret
+	// A prefix that matches every URI: if passthrough were evaluated first,
+	// every request below would reach the origin ungated.
+	vars["passthrough_prefixes"] = []string{"/"}
+	code := renderViewerRequest(t, vars)
+
+	t.Run("an uncookied request is refused even on a passthrough prefix", func(t *testing.T) {
+		for _, uri := range []string{"/", "/detector", "/detector/", "/assets/style.css"} {
+			got := runViewer(t, code, uri, "", nil, "example.test")
+			if got.StatusCode != 403 {
+				t.Errorf("%s: got status %d (uri %q, location %q), want 403 — the dev gate must run before passthrough", uri, got.StatusCode, got.URI, got.Location)
+			}
+		}
+	})
+
+	t.Run("the magic link still mints the cookie and drops the token", func(t *testing.T) {
+		got := runViewer(t, code, "/dev-access", "token="+secret, nil, "example.test")
+		if got.StatusCode != 302 {
+			t.Fatalf("status: got %d, want 302", got.StatusCode)
+		}
+		if got.Location != "/" {
+			t.Errorf("location: got %q, want %q", got.Location, "/")
+		}
+		if strings.Contains(got.Location, secret) {
+			t.Errorf("the dev secret leaked into the redirect target: %q", got.Location)
+		}
+	})
+
+	t.Run("a wrong token is refused", func(t *testing.T) {
+		got := runViewer(t, code, "/dev-access", "token=not-the-secret", nil, "example.test")
+		if got.StatusCode != 403 {
+			t.Errorf("status: got %d, want 403", got.StatusCode)
+		}
+	})
+
+	t.Run("a cookied request is admitted", func(t *testing.T) {
+		got := runViewer(t, code, "/detector", "", map[string]string{"dev_access": secret}, "example.test")
+		// PASSTHROUGH_PREFIXES = ["/"] still short-circuits ahead of
+		// flat-mode, so the request reaches the origin unrewritten. The point
+		// here is that it is no longer 403: the gate admitted it.
+		if got.StatusCode != 0 {
+			t.Errorf("a cookied request must not be refused; got status %d -> %q", got.StatusCode, got.Location)
+		}
+	})
+}
+
+// TestViewerRequestDevGateInFlatModeWithoutPassthrough is the same gate
+// without the catch-all prefix, so a cookied request actually reaches
+// cleanUrl and the flat-mode rewrite is observable through the gate.
+func TestViewerRequestDevGateInFlatModeWithoutPassthrough(t *testing.T) {
+	t.Parallel()
+
+	const secret = "s3cr3t-dev-token"
+
+	vars := flatModeVars()
+	vars["dev_access_secret"] = secret
+	code := renderViewerRequest(t, vars)
+
+	if got := runViewer(t, code, "/detector", "", nil, "example.test"); got.StatusCode != 403 {
+		t.Errorf("uncookied: got status %d (uri %q), want 403", got.StatusCode, got.URI)
+	}
+
+	got := runViewer(t, code, "/detector", "", map[string]string{"dev_access": secret}, "example.test")
+	if got.StatusCode != 0 {
+		t.Fatalf("cookied: got status %d -> %q, want a passthrough to the origin", got.StatusCode, got.Location)
+	}
+	if got.URI != "/detector/index.html" {
+		t.Errorf("cookied uri: got %q, want %q", got.URI, "/detector/index.html")
+	}
+}

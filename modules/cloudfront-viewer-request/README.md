@@ -9,8 +9,31 @@ the entire fleet; site-specific config is injected via `templatefile()`.
 2. **www redirect** — `Host: www.*` gets a 301 to the apex domain (enabled when `www_redirect_host` is set).
 3. **Cookie gate** — visit `/<dev_access_path>?token=<secret>` once to get a 30-day HttpOnly cookie; all other requests must present that cookie. Enabled when `dev_access_secret` is set.
 4. **Passthrough** — configured paths bypass all routing and rewriting.
-5. **Language routing** — requests not on a language prefix are 302-redirected to `/<lang><uri>` using cookie → country → default priority.
+5. **Language routing** — requests not on a language prefix are 302-redirected to `/<lang><uri>` using cookie → country → default priority. Skipped entirely in flat-mode (see below).
 6. **Clean-URL rewriting** — `.html` paths get a 301 canonical redirect; extensionless paths are rewritten to `/path/index.html` for the S3 fetch.
+
+## Flat-mode: a single-language site at the root
+
+Pass `lang_prefixes = []` (with `default_lang = ""`) for a site that is served
+at the root with no `/<lang>/` segment. Language routing is skipped and only
+clean-URL / directory-index rewriting applies, so `/` resolves to
+`/index.html` and `/page` to `/page/index.html`.
+
+Flat-mode is the supported way to say "this site has no language segment".
+Two spellings that look equivalent are not:
+
+- `lang_prefixes = ["_unused"]` with `passthrough_prefixes = ["/"]` — every
+  CloudFront `request.uri` begins with `/`, so the passthrough prefix matches
+  **unconditionally** and returns before any rewriting. `cleanUrl` is then
+  unreachable, and a site whose pages live at `<page>/index.html` 404s on
+  every path except `/`.
+- `lang_prefixes = []` on a release before flat-mode existed — language
+  routing built `'/' + DEFAULT_LANG + uri` with an empty `DEFAULT_LANG`,
+  producing `//<path>`, which matched no prefix and redirected again:
+  `/` → `//` → `///` → `////`, an infinite loop.
+
+Both are fixed by using `lang_prefixes = []` on a release that carries
+flat-mode, and dropping the `["/"]` passthrough so rewriting is reached.
 
 ## Query strings on generated redirects
 
@@ -82,7 +105,7 @@ No modules.
 | <a name="input_environment"></a> [environment](#input\_environment) | Deployment environment (e.g. 'dev' or 'prod'). | `string` | n/a | yes |
 | <a name="input_healthz_enabled"></a> [healthz\_enabled](#input\_healthz\_enabled) | When true, a /healthz request returns 200 OK immediately, bypassing all IP and language gates. | `bool` | `false` | no |
 | <a name="input_ip_allowlist_enabled"></a> [ip\_allowlist\_enabled](#input\_ip\_allowlist\_enabled) | When true, requests from IPs not in the allowlist receive 403. Typically true only in dev environments. | `bool` | `false` | no |
-| <a name="input_lang_prefixes"></a> [lang\_prefixes](#input\_lang\_prefixes) | Ordered list of URL language prefixes. Used for both language routing and clean-URL detection. | `list(string)` | n/a | yes |
+| <a name="input_lang_prefixes"></a> [lang\_prefixes](#input\_lang\_prefixes) | Ordered list of URL language prefixes. Used for both language routing and clean-URL detection. Pass an empty list ([]) for flat-mode: a single-language site served at the root with no /<lang>/ segment — language routing is skipped and only clean-URL / directory-index rewriting applies. | `list(string)` | n/a | yes |
 | <a name="input_name"></a> [name](#input\_name) | Base name for the CloudFront function (environment suffix is appended automatically). | `string` | n/a | yes |
 | <a name="input_passthrough_exact"></a> [passthrough\_exact](#input\_passthrough\_exact) | Paths that bypass language routing. Matched as exact URI or exact-prefix (e.g. '/ask' matches '/ask' and '/ask/foo' but not '/askchat'). | `list(string)` | `[]` | no |
 | <a name="input_passthrough_prefixes"></a> [passthrough\_prefixes](#input\_passthrough\_prefixes) | URI prefixes that bypass language routing. Matched via startsWith (e.g. '/api/' matches '/api/contact'). | `list(string)` | `[]` | no |

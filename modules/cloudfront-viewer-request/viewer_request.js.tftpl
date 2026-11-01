@@ -13,9 +13,18 @@
 //                     that cookie. Enabled when dev_access_secret is set.
 // 4. Passthrough    — configured paths bypass all routing and rewriting.
 // 5. Language routing — requests not on a language prefix are 302-redirected
-//    to /<lang><uri> using cookie → country → default priority.
+//    to /<lang><uri> using cookie → country → default priority. Skipped
+//    entirely in flat-mode (lang_prefixes = []), see FLAT-MODE below.
 // 6. Clean-URL rewriting — .html paths get a 301 canonical redirect;
 //    extensionless paths are rewritten to /path/index.html for the S3 fetch.
+//
+// FLAT-MODE: an empty lang_prefixes means the site is single-language and
+// served at the root, so step 5 is skipped and only step 6 applies. Without
+// that branch an empty list fell through to step 5 and built
+// '/' + DEFAULT_LANG + uri with an empty DEFAULT_LANG — i.e. '//<path>',
+// which matched no language prefix and redirected again: '/' -> '//' ->
+// '///' -> '////', an infinite loop. Do not "fix" that by reordering the
+// redirect; the empty list has to stop routing, not relocate it.
 //
 // INVARIANT: every redirect this function GENERATES must carry the request's
 // query string forward (see queryTail). CloudFront preserves the query string
@@ -134,6 +143,13 @@ function handler(event) {
   }
   for (var q = 0; q < PASSTHROUGH_PREFIXES.length; q++) {
     if (uri.startsWith(PASSTHROUGH_PREFIXES[q])) return request;
+  }
+
+  // Flat-mode: with no language prefixes configured the site is single-language
+  // and served at the root (no /<lang>/ segment). Skip language routing entirely
+  // and apply only clean-URL / directory-index rewriting.
+  if (LANG_PREFIXES.length === 0) {
+    return cleanUrl(request, uri);
   }
 
   for (var i = 0; i < LANG_PREFIXES.length; i++) {
