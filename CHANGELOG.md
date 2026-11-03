@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.16.0](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/compare/v2.15.1...v2.16.0) (2026-11-03)
+
+
+### Features
+
+* **cloudfront-viewer-request:** flat-mode skips language routing ([#107](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/issues/107)) ([f7056d0](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/commit/f7056d0f5a981a9b416a12183b8507fd56f7c76c))
+
 ## [2.15.1](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/compare/v2.15.0...v2.15.1) (2026-10-28)
 
 
