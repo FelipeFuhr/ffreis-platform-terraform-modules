@@ -22,3 +22,16 @@ output "hosted_zone_id" {
   description = "Route 53 hosted zone ID for the bucket's region (useful for alias records)."
   value       = aws_s3_bucket.this.hosted_zone_id
 }
+
+output "tls_enforce_policy_json" {
+  description = <<-EOT
+    The TLS-only (DenyHTTP) policy document as JSON, always computed whether or
+    not this module attaches it.
+
+    For callers that set `manage_bucket_policy = false` and own the bucket
+    policy themselves: feed this into their own
+    `aws_iam_policy_document`'s `override_policy_documents` so the HTTPS
+    requirement survives taking over policy ownership.
+  EOT
+  value       = data.aws_iam_policy_document.tls_enforce.json
+}

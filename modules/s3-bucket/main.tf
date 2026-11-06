@@ -114,12 +114,26 @@ data "aws_iam_policy_document" "tls_enforce" {
 }
 
 resource "aws_s3_bucket_policy" "tls_enforce" {
+  count = var.manage_bucket_policy ? 1 : 0
+
   bucket = aws_s3_bucket.this.id
   policy = data.aws_iam_policy_document.tls_enforce.json
 
   # Policy must be set after the public access block to avoid "conflicting
   # operation" errors when the account-level block is also enabled.
   depends_on = [aws_s3_bucket_public_access_block.this]
+}
+
+# Adding `count` above renames the instance from `...tls_enforce` to
+# `...tls_enforce[0]`. Without this, every existing caller would plan a
+# destroy-then-create of the bucket policy — a window in which the bucket has
+# no policy at all. The move is correct in both directions: with the knob on,
+# state lands on the single instance and nothing changes; with it off, the
+# moved instance has no counterpart in config and is destroyed, which is
+# exactly what a caller taking over policy ownership wants.
+moved {
+  from = aws_s3_bucket_policy.tls_enforce
+  to   = aws_s3_bucket_policy.tls_enforce[0]
 }
 
 # ---------------------------------------------------------------------------
