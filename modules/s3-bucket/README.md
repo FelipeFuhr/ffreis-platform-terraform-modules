@@ -10,7 +10,7 @@
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 6.72.0 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
@@ -45,6 +45,7 @@ No modules.
 | <a name="input_lifecycle_rules"></a> [lifecycle\_rules](#input\_lifecycle\_rules) | Optional lifecycle rules. Example:<br/>  [{<br/>    id      = "expire-old-versions"<br/>    enabled = true<br/>    noncurrent\_version\_expiration\_days = 90<br/>  }] | <pre>list(object({<br/>    id      = string<br/>    enabled = bool<br/>    # Expiration of current objects (days). null = skip.<br/>    expiration_days = optional(number, null)<br/>    # Expiration of noncurrent versions (days). null = skip.<br/>    noncurrent_version_expiration_days = optional(number, null)<br/>  }))</pre> | `[]` | no |
 | <a name="input_logging_target_bucket"></a> [logging\_target\_bucket](#input\_logging\_target\_bucket) | S3 bucket to receive access logs. Leave empty to skip access logging; pass an empty string for the logging bucket itself to break the circular dependency. | `string` | `""` | no |
 | <a name="input_logging_target_prefix"></a> [logging\_target\_prefix](#input\_logging\_target\_prefix) | Log prefix when access logging is enabled. | `string` | `""` | no |
+| <a name="input_manage_bucket_policy"></a> [manage\_bucket\_policy](#input\_manage\_bucket\_policy) | Whether this module owns the bucket policy. Default true: the module<br/>attaches a TLS-only policy denying any non-HTTPS request.<br/><br/>Set false ONLY when the caller must own the policy because the bucket needs<br/>additional statements — most commonly a CloudFront OAC read grant. A bucket<br/>has exactly ONE policy document, so a caller that attaches its own while<br/>this module also attaches one creates two resources contending for a single<br/>object: whichever applies last wins and the other's statements disappear,<br/>then come back on the next apply. The oscillation is silent, and it<br/>surfaces only as the CDN origin intermittently losing read access.<br/><br/>Opting out does NOT mean losing the control: the TLS statement is exposed<br/>as the `tls_enforce_policy_json` output. Merge it into the caller's<br/>document via `override_policy_documents` so HTTPS stays enforced. | `bool` | `true` | no |
 | <a name="input_object_lock_days"></a> [object\_lock\_days](#input\_object\_lock\_days) | Default Object Lock retention in days. 0 uses years instead. | `number` | `0` | no |
 | <a name="input_object_lock_enabled"></a> [object\_lock\_enabled](#input\_object\_lock\_enabled) | Enable S3 Object Lock (WORM). Cannot be disabled after creation. | `bool` | `false` | no |
 | <a name="input_object_lock_mode"></a> [object\_lock\_mode](#input\_object\_lock\_mode) | Object Lock retention mode when object\_lock\_enabled = true: 'GOVERNANCE' or 'COMPLIANCE'. | `string` | `"GOVERNANCE"` | no |
@@ -63,4 +64,5 @@ No modules.
 | <a name="output_bucket_regional_domain_name"></a> [bucket\_regional\_domain\_name](#output\_bucket\_regional\_domain\_name) | Region-specific domain name (bucket.s3.region.amazonaws.com). |
 | <a name="output_hosted_zone_id"></a> [hosted\_zone\_id](#output\_hosted\_zone\_id) | Route 53 hosted zone ID for the bucket's region (useful for alias records). |
 | <a name="output_id"></a> [id](#output\_id) | Bucket name / ID. |
+| <a name="output_tls_enforce_policy_json"></a> [tls\_enforce\_policy\_json](#output\_tls\_enforce\_policy\_json) | The TLS-only (DenyHTTP) policy document as JSON, always computed whether or<br/>not this module attaches it.<br/><br/>For callers that set `manage_bucket_policy = false` and own the bucket<br/>policy themselves: feed this into their own<br/>`aws_iam_policy_document`'s `override_policy_documents` so the HTTPS<br/>requirement survives taking over policy ownership. |
 <!-- END_TF_DOCS -->
