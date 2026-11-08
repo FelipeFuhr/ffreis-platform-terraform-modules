@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.0](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/compare/v2.16.0...v2.17.0) (2026-11-08)
+
+
+### Features
+
+* **s3-bucket:** let a caller own the bucket policy ([#109](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/issues/109)) ([c480900](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/commit/c48090093820e588ba9019cd265ed93d041cb69d))
+
 ## [2.16.0](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/compare/v2.15.1...v2.16.0) (2026-11-03)
 
 
