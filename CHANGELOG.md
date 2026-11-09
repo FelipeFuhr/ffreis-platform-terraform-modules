@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.1](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/compare/v2.17.0...v2.17.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **api-gateway-http:** sanitize every character AWS rejects in a statement_id ([#111](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/issues/111)) ([55dfbc4](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/commit/55dfbc45801d71bdff37103e8d7e91fd28fd1b47))
+
 ## [2.17.0](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/compare/v2.16.0...v2.17.0) (2026-11-08)
 
 
