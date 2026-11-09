@@ -110,13 +110,41 @@ locals {
     for k, v in var.routes : k => v
     if v.integration_type == "AWS_PROXY"
   }
+
+  # A statement_id accepts only [A-Za-z0-9_-]; AWS rejects anything else at
+  # CREATE time, not at plan time, so a bad one gets through review, through
+  # `terraform plan`, and fails halfway into an apply with other resources
+  # already changed.
+  #
+  # The four literal replaces handle the characters every route key has —
+  # "GET /api/x/{id}" — and were sufficient for years because no route key in
+  # the fleet contained anything else. Then a private consumer added a
+  # file-extension route -- `GET /api/sessions/{id}/playlist.m3u8`, which API
+  # Gateway is perfectly happy to serve -- and the "." passed straight through
+  # into the statement_id. The apply failed on exactly that resource.
+  #
+  # The trailing regex pass is the general fix: it maps anything outside the
+  # accepted set to "-", so the next unusual-but-legal route key does not
+  # reopen this. It is deliberately a FIFTH pass rather than a replacement for
+  # the four, which would look tidier and would be a migration: the literal
+  # chain turns "GET /api/x" into "GET--api-x" (space and slash each become a
+  # dash), while a single regex collapses the run to "GET-api-x". Every
+  # existing statement_id would change, and since statement_id forces
+  # replacement, every lambda permission in the fleet would be destroyed and
+  # recreated — a window where API Gateway cannot invoke the function — to fix
+  # a bug in none of them. After the four passes an existing key contains only
+  # [A-Za-z0-9-], so this pass is a no-op on all of them.
+  lambda_statement_ids = {
+    for k, _ in local.lambda_routes :
+    k => "AllowAPIGatewayInvoke-${replace(replace(replace(replace(replace(k, " ", "-"), "/", "-"), "{", ""), "}", ""), "/[^a-zA-Z0-9_-]/", "-")}"
+  }
 }
 
 
 resource "aws_lambda_permission" "apigw" {
   for_each = local.lambda_routes
 
-  statement_id = "AllowAPIGatewayInvoke-${replace(replace(replace(replace(each.key, " ", "-"), "/", "-"), "{", ""), "}", "")}"
+  statement_id = local.lambda_statement_ids[each.key]
   action       = "lambda:InvokeFunction"
   # Extract Lambda ARN from integration_uri format:
   # arn:aws:apigateway:region:lambda:path/2015-03-31/functions/LAMBDA_ARN/invocations
