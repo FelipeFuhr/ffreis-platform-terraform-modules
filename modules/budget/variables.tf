@@ -153,6 +153,21 @@ variable "action" {
 
   default = null
 
+  # Every condition below is wrapped in `try(<expr>, true)` rather than guarded
+  # with `var.action == null || <expr>`.
+  #
+  # `||` is NOT reliably short-circuiting in a variable validation: on the
+  # Terraform that CI runs, `var.action == null || length(var.action.iam.roles)
+  # > 0` still evaluates the right-hand side and fails with "Attempt to get
+  # attribute from null value". It happened to pass on the author's older local
+  # Terraform, so this only surfaced in CI. Same family as the eagerly-evaluated
+  # locals in main.tf — Terraform evaluates more than you asked it to, and the
+  # guard has to be structural rather than positional.
+  #
+  # `try(..., true)` means "not applicable, so not a violation": when var.action
+  # is null, or the relevant iam/ssm sub-object is absent, the dereference fails
+  # and the validation passes. The sub-object's own presence is enforced by the
+  # exactly-one check below, so nothing is left unvalidated.
   validation {
     condition = (
       var.action == null ||
@@ -162,56 +177,50 @@ variable "action" {
   }
 
   validation {
-    condition = (
-      var.action == null ||
-      length(var.action.subscriber_email_addresses) + length(var.action.subscriber_sns_topic_arns) > 0
+    condition = try(
+      length(var.action.subscriber_email_addresses) + length(var.action.subscriber_sns_topic_arns) > 0,
+      true,
     )
     error_message = "action needs at least one subscriber: the action is irreversible without a human, so someone must be told it fired."
   }
 
   validation {
-    condition     = var.action == null || contains(["PERCENTAGE", "ABSOLUTE_VALUE"], var.action.threshold_type)
+    condition     = try(contains(["PERCENTAGE", "ABSOLUTE_VALUE"], var.action.threshold_type), true)
     error_message = "action.threshold_type must be 'PERCENTAGE' or 'ABSOLUTE_VALUE'."
   }
 
   validation {
-    condition     = var.action == null || contains(["ACTUAL", "FORECASTED"], var.action.notification_type)
+    condition     = try(contains(["ACTUAL", "FORECASTED"], var.action.notification_type), true)
     error_message = "action.notification_type must be 'ACTUAL' or 'FORECASTED'."
   }
 
   validation {
-    condition     = var.action == null || contains(["AUTOMATIC", "MANUAL"], var.action.approval_model)
+    condition     = try(contains(["AUTOMATIC", "MANUAL"], var.action.approval_model), true)
     error_message = "action.approval_model must be 'AUTOMATIC' or 'MANUAL'."
   }
 
   validation {
-    condition     = var.action == null || var.action.threshold_percent > 0
+    condition     = try(var.action.threshold_percent > 0, true)
     error_message = "action.threshold_percent must be greater than 0."
   }
 
   validation {
-    condition = (
-      var.action == null ||
-      try(var.action.ssm, null) == null ||
-      contains(["STOP_EC2_INSTANCES", "STOP_RDS_INSTANCES"], var.action.ssm.action_sub_type)
+    condition = try(
+      contains(["STOP_EC2_INSTANCES", "STOP_RDS_INSTANCES"], var.action.ssm.action_sub_type),
+      true,
     )
     error_message = "action.ssm.action_sub_type must be 'STOP_EC2_INSTANCES' or 'STOP_RDS_INSTANCES'."
   }
 
   validation {
-    condition = (
-      var.action == null ||
-      try(var.action.ssm, null) == null ||
-      length(var.action.ssm.instance_ids) > 0
-    )
+    condition     = try(length(var.action.ssm.instance_ids) > 0, true)
     error_message = "action.ssm.instance_ids must not be empty."
   }
 
   validation {
-    condition = (
-      var.action == null ||
-      try(var.action.iam, null) == null ||
-      length(var.action.iam.roles) + length(var.action.iam.groups) + length(var.action.iam.users) > 0
+    condition = try(
+      length(var.action.iam.roles) + length(var.action.iam.groups) + length(var.action.iam.users) > 0,
+      true,
     )
     error_message = "action.iam must target at least one role, group, or user."
   }
