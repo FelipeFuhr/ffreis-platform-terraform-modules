@@ -24,5 +24,14 @@ output "action_enforces" {
     is AUTOMATIC. A MANUAL action waits for a human, so it enforces nothing on
     its own — assert on this in a policy check rather than on action_id.
   EOT
-  value       = local.action_enabled && var.action.approval_model == "AUTOMATIC"
+  # try(..., false) rather than `local.action_enabled && var.action.approval_model
+  # == "AUTOMATIC"`. An output has no `count`, so it is ALWAYS evaluated, and
+  # `&&` does not short-circuit: with var.action null the right operand still
+  # ran and failed the plan with "Attempt to get attribute from null value" —
+  # breaking the notify-only default for every existing caller.
+  #
+  # The rule, consistent across this module: `? :` evaluates its branches
+  # lazily (which is why action_id's ternary is fine), while `&&` and `||` do
+  # not. So a null guard has to be structural — try() — not positional.
+  value = try(var.action.approval_model == "AUTOMATIC", false)
 }
