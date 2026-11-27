@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.18.0](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/compare/v2.17.1...v2.18.0) (2026-11-27)
+
+
+### Features
+
+* **budget:** add an optional enforcement action, so a budget can stop spend ([#113](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/issues/113)) ([58d8945](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/commit/58d8945ca41b2defb4986ba57db3241a554dbf29))
+
 ## [2.17.1](https://github.com/FelipeFuhr/ffreis-platform-terraform-modules/compare/v2.17.0...v2.17.1) (2026-11-09)
 
 
