@@ -55,3 +55,7 @@ terraform.rc
 .vscode/
 *.swp
 *.swo
+
+# local-only tooling installed by quality-kit/scripts (lefthook, act)
+.bin/
+.scannerwork/
